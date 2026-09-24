@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, RefreshCw } from 'lucide-react';
+import { withdrawalApi } from '../services/api';
 
 export default function WithdrawView({ user, onStatusChange }) {
   const [country, setCountry] = useState('ET'); // 'ET' (Ethiopia) or 'GLOBAL'
@@ -8,30 +9,62 @@ export default function WithdrawView({ user, onStatusChange }) {
   const [ethAccount, setEthAccount] = useState('');
   const [ethFullName, setEthFullName] = useState('');
   const [devBypass, setDevBypass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [liveStatus, setLiveStatus] = useState(user?.withdrawalStatus || 'none');
+
+  // Fetch live withdrawal and gate status
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const res = await withdrawalApi.getStatus();
+        if (res.success && res.data) {
+          setLiveStatus(res.data.status);
+        }
+      } catch (err) {
+        console.warn('Could not fetch live withdrawal status:', err.message);
+      }
+    }
+    fetchStatus();
+  }, []);
 
   const balance = user?.balance ?? 0.00;
   const adsWatched = user?.adsWatchedTotal ?? user?.adsWatchedToday ?? 0;
   const referralCount = user?.referralCount ?? 0;
-  const status = user?.withdrawalStatus || 'none';
 
   const isAdsEligible = adsWatched >= 20 || devBypass;
   const isRefEligible = referralCount >= 10 || devBypass;
   const isFullyEligible = isAdsEligible && isRefEligible;
 
-  // Handle form submission (v1: status flag flip only, no address data sent)
-  const handleSubmitWithdrawal = (e) => {
+  // Handle form submission (v1: status flag flip only, no address data sent to backend)
+  const handleSubmitWithdrawal = async (e) => {
     e.preventDefault();
+    setErrorMsg(null);
 
-    if (!isFullyEligible) return;
+    if (!isFullyEligible) {
+      setErrorMsg('Eligibility gate locked: Requires 20 ads watched and 10 referrals.');
+      return;
+    }
 
-    // Trigger local status flip to "in_queue"
-    if (onStatusChange) {
-      onStatusChange('in_queue');
+    setSubmitting(true);
+    try {
+      // Call backend (sends zero address payload)
+      const res = await withdrawalApi.request({ devBypass });
+      if (res.success) {
+        setLiveStatus('pending');
+        if (onStatusChange) {
+          onStatusChange('pending');
+        }
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to submit withdrawal request.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   // If user already has a pending/in_queue withdrawal, show the status queue card
-  if (status === 'pending' || status === 'in_queue') {
+  if (liveStatus === 'pending' || liveStatus === 'in_queue') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div className="glass-card" style={{ textAlign: 'center', padding: '24px 16px', borderColor: 'rgba(245, 158, 11, 0.4)' }}>
@@ -56,8 +89,8 @@ export default function WithdrawView({ user, onStatusChange }) {
               <span style={{ fontSize: '12px', fontWeight: '600' }}>#14 in line</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Security Check:</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent-emerald)' }}>Passed</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Security Gate:</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent-emerald)' }}>Passed (20/20 Ads, 10/10 Refs)</span>
             </div>
           </div>
         </div>
@@ -79,6 +112,14 @@ export default function WithdrawView({ user, onStatusChange }) {
           </div>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {errorMsg && (
+        <div style={{ padding: '10px 14px', background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertCircle size={16} color="var(--accent-rose)" />
+          <span style={{ fontSize: '12px', color: 'var(--accent-rose)', fontWeight: '600' }}>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Eligibility Gate Card */}
       <div className="glass-card">
@@ -258,11 +299,16 @@ export default function WithdrawView({ user, onStatusChange }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isFullyEligible}
+            disabled={!isFullyEligible || submitting}
             className="btn-primary"
             style={{ marginTop: '8px' }}
           >
-            <Wallet size={16} /> Request Withdrawal (${balance.toFixed(2)})
+            {submitting ? (
+              <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            ) : (
+              <Wallet size={16} />
+            )}
+            {submitting ? 'Placing in Queue...' : `Request Withdrawal ($${balance.toFixed(2)})`}
           </button>
         </form>
       </div>

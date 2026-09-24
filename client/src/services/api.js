@@ -59,3 +59,12 @@ export const dashboardApi = {
 export const referralApi = {
   getSummary: () => apiRequest('/referrals/summary', { method: 'GET' })
 };
+
+export const withdrawalApi = {
+  getStatus: () => apiRequest('/withdrawals/status', { method: 'GET' }),
+  request: (options = {}) =>
+    apiRequest('/withdrawals/request', {
+      method: 'POST',
+      body: JSON.stringify(options)
+    })
+};
