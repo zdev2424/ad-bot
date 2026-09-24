@@ -33,26 +33,33 @@ function AppContent() {
   }
 
   // Interactive handler for ad completion
-  const handleAdCompleted = (slotNum) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const newAdsToday = (prev.adsWatchedToday || 0) + 1;
-      const newAdsTotal = (prev.adsWatchedTotal || 0) + 1;
-      const newBalance = (prev.balance || 0) + 0.005;
-      const newTotalEarned = (prev.totalEarned || 0) + 0.005;
-      return {
+  const handleAdCompleted = (slotNum, updatedUser) => {
+    if (updatedUser) {
+      setUser((prev) => ({
         ...prev,
-        adsWatchedToday: newAdsToday,
-        adsWatchedTotal: newAdsTotal,
-        balance: parseFloat(newBalance.toFixed(4)),
-        totalEarned: parseFloat(newTotalEarned.toFixed(4)),
-        eligibility: {
-          ...prev.eligibility,
-          adsWatched: newAdsTotal,
-          isEligible: newAdsTotal >= 20 && (prev.referralCount || 0) >= 10
-        }
-      };
-    });
+        ...updatedUser
+      }));
+    } else {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const newAdsToday = (prev.adsWatchedToday || 0) + 1;
+        const newAdsTotal = (prev.adsWatchedTotal || 0) + 1;
+        const newBalance = (prev.balance || 0) + 0.005;
+        const newTotalEarned = (prev.totalEarned || 0) + 0.005;
+        return {
+          ...prev,
+          adsWatchedToday: newAdsToday,
+          adsWatchedTotal: newAdsTotal,
+          balance: parseFloat(newBalance.toFixed(4)),
+          totalEarned: parseFloat(newTotalEarned.toFixed(4)),
+          eligibility: {
+            ...prev.eligibility,
+            adsWatched: newAdsTotal,
+            isEligible: newAdsTotal >= 20 && (prev.referralCount || 0) >= 10
+          }
+        };
+      });
+    }
   };
 
   // Interactive handler for withdrawal status flip

@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { Tv, CheckCircle, Clock, PlayCircle, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Tv, CheckCircle, Clock, PlayCircle, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { adsgramService } from '../services/adsgram';
+import { tasksApi } from '../services/api';
 
 export default function TasksView({ user, onAdCompleted }) {
   const [selectedRange, setSelectedRange] = useState(0); // 0: 1-25, 1: 26-50, 2: 51-75, 3: 76-100
   const [watchingSlot, setWatchingSlot] = useState(null);
   const [cooldownTime, setCooldownTime] = useState(0);
   const [notification, setNotification] = useState(null);
+  const [completedSlots, setCompletedSlots] = useState([]);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
   const rangeSize = 25;
-  const totalSlots = 100;
   const ranges = [
     { label: 'Slots 1–25', start: 1, end: 25 },
     { label: 'Slots 26–50', start: 26, end: 50 },
@@ -17,16 +20,55 @@ export default function TasksView({ user, onAdCompleted }) {
   ];
 
   const currentRange = ranges[selectedRange];
-  const watchedCount = user?.adsWatchedToday ?? 0;
 
-  // Simulate watching an ad (Module 5 will hook directly to Adsgram SDK)
-  const handleWatchAd = (slotNum) => {
+  // Initialize Adsgram SDK & load live task status from backend
+  useEffect(() => {
+    adsgramService.init();
+
+    async function fetchTaskStatus() {
+      try {
+        const res = await tasksApi.getStatus();
+        if (res.success && res.data) {
+          setCompletedSlots(res.data.completedSlots || []);
+          if (res.data.remainingCooldown > 0) {
+            setCooldownTime(res.data.remainingCooldown);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch live task status:', err.message);
+      } finally {
+        setLoadingStatus(false);
+      }
+    }
+
+    fetchTaskStatus();
+  }, []);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldownTime <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownTime]);
+
+  // Execute Ad Watch Flow
+  const handleWatchAd = async (slotNum) => {
     if (cooldownTime > 0) {
       setNotification({ type: 'warning', text: `Please wait ${cooldownTime}s before watching the next ad.` });
       return;
     }
 
-    if (slotNum <= watchedCount) {
+    if (completedSlots.includes(slotNum)) {
       setNotification({ type: 'info', text: `Slot #${slotNum} already completed today! Resets at 00:00 UTC.` });
       return;
     }
@@ -34,28 +76,37 @@ export default function TasksView({ user, onAdCompleted }) {
     setWatchingSlot(slotNum);
     setNotification(null);
 
-    // Simulate 3 second ad playback flow for UI testing
-    setTimeout(() => {
-      setWatchingSlot(null);
-      setCooldownTime(15);
-      setNotification({ type: 'success', text: `🎉 Ad #${slotNum} watched! Earned +$0.005 USD.` });
+    try {
+      // 1. Play Rewarded Ad through Adsgram SDK
+      await adsgramService.showRewardedAd();
 
-      if (onAdCompleted) {
-        onAdCompleted(slotNum);
-      }
+      // 2. Call Backend API to verify and credit balance
+      const result = await tasksApi.complete(slotNum);
 
-      // Countdown cooldown timer
-      const interval = setInterval(() => {
-        setCooldownTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
+      if (result.success) {
+        setCompletedSlots((prev) => [...prev, slotNum]);
+        setCooldownTime(result.cooldownSeconds || 15);
+        setNotification({
+          type: 'success',
+          text: `🎉 Slot #${slotNum} completed! +$${result.reward.toFixed(3)} credited to your balance.`
         });
-      }, 1000);
-    }, 3000);
+
+        if (onAdCompleted) {
+          onAdCompleted(slotNum, result.user);
+        }
+      }
+    } catch (error) {
+      console.error('Ad Watch error:', error);
+      setNotification({
+        type: 'error',
+        text: error.message || 'Ad playback could not be verified. Please try again.'
+      });
+    } finally {
+      setWatchingSlot(null);
+    }
   };
+
+  const watchedCount = completedSlots.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -68,7 +119,9 @@ export default function TasksView({ user, onAdCompleted }) {
             </div>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Rewarded Ad Slots</h3>
-              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Watch short 15s videos to earn cash</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                {watchedCount} / 100 Completed Today
+              </p>
             </div>
           </div>
           <span className="badge badge-emerald">+$0.005 / Ad</span>
@@ -90,13 +143,13 @@ export default function TasksView({ user, onAdCompleted }) {
             marginTop: '10px',
             padding: '8px 12px',
             borderRadius: 'var(--radius-md)',
-            background: notification.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-            border: `1px solid ${notification.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+            background: notification.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+            border: `1px solid ${notification.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
-            <Sparkles size={14} color={notification.type === 'success' ? 'var(--accent-emerald)' : 'var(--accent-blue)'} />
+            <Sparkles size={14} color={notification.type === 'success' ? 'var(--accent-emerald)' : notification.type === 'error' ? 'var(--accent-rose)' : 'var(--accent-blue)'} />
             <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>{notification.text}</span>
           </div>
         )}
@@ -129,8 +182,7 @@ export default function TasksView({ user, onAdCompleted }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {Array.from({ length: rangeSize }, (_, i) => {
           const slotNumber = currentRange.start + i;
-          const isWatched = slotNumber <= watchedCount;
-          const isCurrentTarget = slotNumber === watchedCount + 1;
+          const isWatched = completedSlots.includes(slotNumber);
           const isWatching = watchingSlot === slotNumber;
 
           return (
@@ -143,7 +195,7 @@ export default function TasksView({ user, onAdCompleted }) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 opacity: isWatched ? 0.6 : 1,
-                borderColor: isCurrentTarget ? 'rgba(59, 130, 246, 0.5)' : 'var(--border-color)'
+                borderColor: isWatched ? 'rgba(16, 185, 129, 0.2)' : 'var(--border-color)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -178,7 +230,7 @@ export default function TasksView({ user, onAdCompleted }) {
                   style={{ width: 'auto', padding: '6px 14px', fontSize: '12px' }}
                 >
                   <div style={{ width: '12px', height: '12px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  Watching...
+                  Playing Ad...
                 </button>
               ) : (
                 <button
@@ -188,12 +240,12 @@ export default function TasksView({ user, onAdCompleted }) {
                   style={{
                     padding: '6px 14px',
                     fontSize: '12px',
-                    background: isCurrentTarget ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.08)',
-                    color: isCurrentTarget ? '#ffffff' : 'var(--text-primary)',
+                    background: 'var(--gradient-primary)',
+                    color: '#ffffff',
                     border: 'none'
                   }}
                 >
-                  <PlayCircle size={14} /> Watch
+                  <PlayCircle size={14} /> Watch Ad
                 </button>
               )}
             </div>

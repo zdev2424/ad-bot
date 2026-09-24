@@ -42,3 +42,12 @@ export const authApi = {
   verify: () => apiRequest('/auth/verify', { method: 'POST' }),
   getMe: () => apiRequest('/auth/me', { method: 'GET' })
 };
+
+export const tasksApi = {
+  getStatus: () => apiRequest('/tasks/status', { method: 'GET' }),
+  complete: (slotNumber) =>
+    apiRequest('/tasks/complete', {
+      method: 'POST',
+      body: JSON.stringify({ slotNumber })
+    })
+};
