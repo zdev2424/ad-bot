@@ -1,17 +1,39 @@
-import React from 'react';
-import { Sparkles, Tv, Users, Wallet, ArrowUpRight, CheckCircle2, TrendingUp } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, Tv, Users, Wallet, ArrowUpRight, CheckCircle2, TrendingUp, RefreshCw, Zap } from 'lucide-react';
+import { dashboardApi } from '../services/api';
 
 export default function DashboardView({ user, setActiveTab }) {
-  const balance = user?.balance ?? 0.00;
-  const totalEarned = user?.totalEarned ?? 0.00;
-  const adsWatchedToday = user?.adsWatchedToday ?? 0;
-  const referralCount = user?.referralCount ?? 0;
-  const maxDailyAds = 100;
+  const [stats, setStats] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchLiveStats = async () => {
+    setRefreshing(true);
+    try {
+      const res = await dashboardApi.getStats();
+      if (res.success && res.data) {
+        setStats(res.data);
+      }
+    } catch (err) {
+      console.warn('Live stats fetch warning:', err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveStats();
+  }, []);
+
+  const balance = stats?.balance ?? user?.balance ?? 0.00;
+  const totalEarned = stats?.totalEarned ?? user?.totalEarned ?? 0.00;
+  const adsWatchedToday = stats?.adsWatchedToday ?? user?.adsWatchedToday ?? 0;
+  const referralCount = stats?.referralCount ?? user?.referralCount ?? 0;
+  const maxDailyAds = stats?.maxDailyAds ?? 100;
   const progressPercent = Math.min(100, Math.round((adsWatchedToday / maxDailyAds) * 100));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* User Welcome Card */}
+      {/* User Welcome & Refresh Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 2px' }}>
         <div>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>Welcome back,</span>
@@ -19,9 +41,26 @@ export default function DashboardView({ user, setActiveTab }) {
             {user?.firstName || 'EarnCashIO Earner'} 👋
           </h2>
         </div>
-        <div className="badge badge-emerald">
-          <Sparkles size={12} /> Active
-        </div>
+        <button
+          onClick={fetchLiveStats}
+          disabled={refreshing}
+          style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            color: 'var(--accent-cyan)',
+            padding: '6px 10px',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '11px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <RefreshCw size={12} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+          {refreshing ? 'Syncing...' : 'Sync'}
+        </button>
       </div>
 
       {/* Main Balance Card */}
@@ -40,8 +79,8 @@ export default function DashboardView({ user, setActiveTab }) {
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
             Current Balance
           </span>
-          <span style={{ fontSize: '11px', padding: '2px 8px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-full)', color: 'var(--accent-cyan)' }}>
-            USD Equivalent
+          <span style={{ fontSize: '11px', padding: '2px 8px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-full)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Zap size={10} /> Live Synced
           </span>
         </div>
 
@@ -61,8 +100,8 @@ export default function DashboardView({ user, setActiveTab }) {
           </div>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Withdrawal Status</span>
-            <p style={{ fontSize: '13px', fontWeight: '600', textTransform: 'capitalize', color: user?.withdrawalStatus === 'pending' || user?.withdrawalStatus === 'in_queue' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
-              {user?.withdrawalStatus === 'none' ? 'Ready' : user?.withdrawalStatus || 'Ready'}
+            <p style={{ fontSize: '13px', fontWeight: '600', textTransform: 'capitalize', color: (stats?.withdrawalStatus || user?.withdrawalStatus) === 'pending' || (stats?.withdrawalStatus || user?.withdrawalStatus) === 'in_queue' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+              {(stats?.withdrawalStatus || user?.withdrawalStatus) === 'none' ? 'Ready' : (stats?.withdrawalStatus || user?.withdrawalStatus || 'Ready')}
             </p>
           </div>
         </div>
@@ -114,11 +153,26 @@ export default function DashboardView({ user, setActiveTab }) {
             <span className="badge badge-emerald">Instant Gate</span>
           </div>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Withdrawal Gate</span>
-          <p style={{ fontSize: '14px', fontWeight: '700', marginTop: '4px', color: user?.eligibility?.isEligible ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
-            {user?.eligibility?.isEligible ? 'Unlocked 🎉' : `${adsWatchedToday}/20 Ads`}
+          <p style={{ fontSize: '14px', fontWeight: '700', marginTop: '4px', color: (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
+            {(stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'Unlocked 🎉' : `${adsWatchedToday}/20 Ads`}
           </p>
         </div>
       </div>
+
+      {/* Platform Live Highlight */}
+      {stats?.global && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Network Ads Served</span>
+            <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{stats.global.totalAdsServed}+</p>
+          </div>
+          <div style={{ width: '1px', height: '20px', background: 'var(--border-color)' }} />
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Earners Online</span>
+            <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-emerald)' }}>{stats.global.totalActiveUsers || 1}</p>
+          </div>
+        </div>
+      )}
 
       {/* Primary Action Button */}
       <button className="btn-primary" onClick={() => setActiveTab('tasks')}>

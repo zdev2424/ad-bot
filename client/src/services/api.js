@@ -51,3 +51,7 @@ export const tasksApi = {
       body: JSON.stringify({ slotNumber })
     })
 };
+
+export const dashboardApi = {
+  getStats: () => apiRequest('/dashboard/stats', { method: 'GET' })
+};
