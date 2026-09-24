@@ -1,5 +1,7 @@
 import express from 'express';
 import { requireTelegramAuth } from '../middleware/authMiddleware.js';
+import { taskLimiter } from '../middleware/rateLimiter.js';
+import { fraudGuard } from '../services/fraudGuard.js';
 import { TasksEngine } from '../services/tasksEngine.js';
 
 const router = express.Router();
@@ -27,14 +29,23 @@ router.get('/status', requireTelegramAuth, (req, res) => {
 
 /**
  * @route   POST /api/tasks/complete
- * @desc    Validates completed ad view and credits user balance
+ * @desc    Validates completed ad view, runs fraud guard, and credits user balance
  * @access  Protected
  */
-router.post('/complete', requireTelegramAuth, (req, res) => {
+router.post('/complete', requireTelegramAuth, taskLimiter, (req, res) => {
   try {
     const { slotNumber } = req.body;
     if (!slotNumber) {
       return res.status(400).json({ success: false, error: 'slotNumber is required' });
+    }
+
+    // Run Fraud Guard checks (velocity & multi-accounting heuristics)
+    const fraudCheck = fraudGuard.checkAdWatchVelocity(req.user.telegramId, req);
+    if (!fraudCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        error: fraudCheck.reason
+      });
     }
 
     const result = TasksEngine.completeAdWatch(req.user.telegramId, slotNumber);

@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { globalLimiter } from './middleware/rateLimiter.js';
 import { initDatabase } from './db/index.js';
 import { initTelegramBot } from './bot/bot.js';
 import authRoutes from './routes/authRoutes.js';
@@ -17,11 +19,23 @@ dotenv.config(); // fallback to local .env
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Security Headers (configured to allow Telegram WebApp iframe embedding)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    frameguard: false
+  })
+);
+
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
   credentials: true
 }));
+
 app.use(express.json());
+
+// Apply global rate limiting
+app.use(globalLimiter);
 
 // Initialize Database Schemas
 initDatabase();
@@ -29,7 +43,7 @@ initDatabase();
 // Initialize Telegram Bot (if BOT_TOKEN is present)
 initTelegramBot();
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -44,6 +58,7 @@ app.get('/health', (req, res) => {
     status: 'ok',
     app: 'EarnCashIO Backend',
     database: 'SQLite (WAL mode)',
+    security: 'Helmet + RateLimiter + FraudGuard active',
     timestamp: new Date().toISOString()
   });
 });
