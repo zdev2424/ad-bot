@@ -27,7 +27,12 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Database files (if local sqlite / cache)
+# Database files (local sqlite / cache)
 *.sqlite
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
+server/data/
+data/
+
