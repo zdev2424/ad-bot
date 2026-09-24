@@ -9,6 +9,7 @@ import ReferralView from './views/ReferralView';
 import WithdrawView from './views/WithdrawView';
 import LeaderboardView from './views/LeaderboardView';
 import AdminView from './views/AdminView';
+import Logo from './components/Logo';
 import { Sparkles, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
@@ -80,12 +81,10 @@ function AppContent() {
     <div className="app-container">
       {/* Top Header */}
       <header style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', background: 'rgba(10, 14, 23, 0.85)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 90 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '13px', color: '#fff' }}>
-            ⚡
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Logo size={32} />
           <div>
-            <h1 style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '-0.02em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '-0.02em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               EarnCashIO
             </h1>
           </div>
