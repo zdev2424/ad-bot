@@ -1,22 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, X, Sparkles, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, X, Sparkles, Search, ChevronDown, Coins } from 'lucide-react';
 import { withdrawalApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { ALL_COUNTRIES } from '../utils/countries';
 
 export default function WithdrawView({ user, onStatusChange }) {
   const { t } = useLanguage();
-  const [country, setCountry] = useState(''); // No country selected by default
-  const [ethMethod, setEthMethod] = useState(''); // 'telebirr' or 'cbe'
+  const [selectedCountry, setSelectedCountry] = useState(null); // { code, name, flag }
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Crypto Toggle: 'TON' or 'USDT'
+  const [cryptoType, setCryptoType] = useState('USDT'); 
+  const [cryptoNetwork, setCryptoNetwork] = useState('TON'); // 'TON', 'TRC20', 'BEP20'
   const [cryptoAddress, setCryptoAddress] = useState('');
+  
+  // Ethiopian fields
+  const [ethMethod, setEthMethod] = useState(''); // 'telebirr' or 'cbe'
   const [ethAccount, setEthAccount] = useState('');
   const [ethFullName, setEthFullName] = useState('');
+
   const [devBypass, setDevBypass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [liveStatus, setLiveStatus] = useState(user?.withdrawalStatus || 'none');
   const [showQueueModal, setShowQueueModal] = useState(false);
 
-  // Dynamic estimated wait time for the popup
+  const countryDropdownRef = useRef(null);
   const estimatedWaitTime = '2 days (approx. 48 hours)';
 
   useEffect(() => {
@@ -33,6 +43,17 @@ export default function WithdrawView({ user, onStatusChange }) {
     fetchStatus();
   }, []);
 
+  // Close country dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const balance = user?.balance ?? 0.00;
   const adsWatched = user?.adsWatchedTotal ?? user?.adsWatchedToday ?? 0;
   const referralCount = user?.referralCount ?? 0;
@@ -41,22 +62,36 @@ export default function WithdrawView({ user, onStatusChange }) {
   const isRefEligible = referralCount >= 10 || devBypass;
   const isFullyEligible = isAdsEligible && isRefEligible;
 
+  // Filter countries alphabetically by search query
+  const filteredCountries = ALL_COUNTRIES.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelectCountry = (country) => {
+    setSelectedCountry(country);
+    setIsDropdownOpen(false);
+    setSearchQuery('');
+    setEthMethod(''); // reset sub-methods
+    setErrorMsg(null);
+  };
+
   const handleSubmitWithdrawal = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!country) {
+    if (!selectedCountry) {
       setErrorMsg('Please select your country first.');
       return;
     }
 
-    if (country === 'ET' && !ethMethod) {
-      setErrorMsg('Please select your payment provider (Telebirr or CBE Bank).');
+    if (selectedCountry.code === 'ET' && !ethMethod) {
+      setErrorMsg('Please select your Ethiopian provider (Telebirr or CBE Bank).');
       return;
     }
 
     if (!isFullyEligible) {
-      setErrorMsg('Eligibility gate locked: You must watch 20 ads and invite 10 friends (or toggle Dev Mode Test above).');
+      setErrorMsg('Eligibility gate locked: Requires 20 ads watched and 10 referrals (or click Dev Mode Test).');
       return;
     }
 
@@ -66,7 +101,7 @@ export default function WithdrawView({ user, onStatusChange }) {
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
         setLiveStatus('pending');
-        setShowQueueModal(true); // Open the Pending in Queue popup modal
+        setShowQueueModal(true);
         if (onStatusChange) {
           onStatusChange('pending');
         }
@@ -93,7 +128,7 @@ export default function WithdrawView({ user, onStatusChange }) {
         </div>
       </div>
 
-      {/* If already in queue, show the persistent status banner */}
+      {/* Persistent In-Queue Banner if active */}
       {(liveStatus === 'pending' || liveStatus === 'in_queue') && (
         <div className="glass-card" style={{ borderColor: 'rgba(245, 158, 11, 0.5)', background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -107,7 +142,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               View Queue Details
             </button>
           </div>
-          <p style={{ fontSize: '13px', fontWeight: '600' }}>Your withdrawal request of ${balance.toFixed(2)} is being reviewed.</p>
+          <p style={{ fontSize: '13px', fontWeight: '600' }}>Your withdrawal request of ${balance.toFixed(2)} is currently in queue.</p>
           <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
             ⏱️ Estimated wait time: <strong style={{ color: 'var(--accent-amber)' }}>{estimatedWaitTime}</strong>
           </p>
@@ -176,35 +211,120 @@ export default function WithdrawView({ user, onStatusChange }) {
         </div>
       </div>
 
-      {/* Payment Form (Always Interactive) */}
+      {/* Payout Method Form */}
       <div className="glass-card">
         <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>{t('withdraw.payoutMethod')}</h4>
 
-        <form onSubmit={handleSubmitWithdrawal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Country Selector */}
-          <div>
+        <form onSubmit={handleSubmitWithdrawal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Alphabetical Searchable Country Selector */}
+          <div style={{ position: 'relative' }} ref={countryDropdownRef}>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
               {t('withdraw.selectCountry')} *
             </label>
-            <select
-              className="form-select"
-              value={country}
-              disabled={liveStatus === 'pending'}
-              onChange={(e) => {
-                setCountry(e.target.value);
-                setEthMethod(''); // reset sub-provider on country change
-                setErrorMsg(null);
+
+            {/* Selected Country Trigger */}
+            <div
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              style={{
+                width: '100%',
+                background: 'rgba(15, 23, 42, 0.7)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                color: selectedCountry ? 'var(--text-primary)' : 'var(--text-muted)',
+                fontSize: '14px'
               }}
             >
-              <option value="">-- Choose Your Country --</option>
-              <option value="ET">🇪🇹 Ethiopia</option>
-              <option value="GLOBAL">🌍 Global / Other Countries</option>
-            </select>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {selectedCountry ? (
+                  <>
+                    <span style={{ fontSize: '18px' }}>{selectedCountry.flag}</span>
+                    <span style={{ fontWeight: '600' }}>{selectedCountry.name}</span>
+                  </>
+                ) : (
+                  <span>-- Search or Choose Your Country --</span>
+                )}
+              </div>
+              <ChevronDown size={16} color="var(--text-muted)" />
+            </div>
+
+            {/* Dropdown Menu with Search Filter */}
+            {isDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  right: 0,
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '8px',
+                  boxShadow: '0 14px 30px rgba(0, 0, 0, 0.7)',
+                  zIndex: 300,
+                  maxHeight: '260px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                {/* Search Input */}
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
+                  <Search size={14} color="var(--text-muted)" style={{ marginRight: '6px' }} />
+                  <input
+                    type="text"
+                    placeholder="Type country name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '13px', outline: 'none', width: '100%' }}
+                  />
+                </div>
+
+                {/* Country List (Alphabetical) */}
+                <div style={{ overflowY: 'auto', maxHeight: '200px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {filteredCountries.length === 0 ? (
+                    <div style={{ padding: '12px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      No country found. Select "Other Countries (Global)".
+                    </div>
+                  ) : (
+                    filteredCountries.map((c) => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => handleSelectCountry(c)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '8px 10px',
+                          background: selectedCountry?.code === c.code ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          color: selectedCountry?.code === c.code ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                          fontSize: '13px',
+                          fontWeight: selectedCountry?.code === c.code ? '700' : '500',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <span style={{ fontSize: '16px' }}>{c.flag}</span>
+                        <span>{c.name}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Conditional Rendering: Ethiopia Options (Telebirr / CBE only appear if Ethiopia is selected) */}
-          {country === 'ET' && (
-            <>
+          {/* Conditional 1: Ethiopia Methods */}
+          {selectedCountry?.code === 'ET' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(15, 23, 42, 0.5)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
                   {t('withdraw.provider')} (Ethiopia) *
@@ -212,7 +332,6 @@ export default function WithdrawView({ user, onStatusChange }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
                     type="button"
-                    disabled={liveStatus === 'pending'}
                     onClick={() => {
                       setEthMethod('telebirr');
                       setErrorMsg(null);
@@ -229,8 +348,7 @@ export default function WithdrawView({ user, onStatusChange }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease'
+                      gap: '6px'
                     }}
                   >
                     <Smartphone size={16} color="var(--accent-cyan)" /> Telebirr
@@ -238,7 +356,6 @@ export default function WithdrawView({ user, onStatusChange }) {
 
                   <button
                     type="button"
-                    disabled={liveStatus === 'pending'}
                     onClick={() => {
                       setEthMethod('cbe');
                       setErrorMsg(null);
@@ -255,8 +372,7 @@ export default function WithdrawView({ user, onStatusChange }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease'
+                      gap: '6px'
                     }}
                   >
                     <Building size={16} color="var(--accent-purple)" /> CBE Bank
@@ -273,7 +389,6 @@ export default function WithdrawView({ user, onStatusChange }) {
                     <input
                       type="text"
                       required
-                      disabled={liveStatus === 'pending'}
                       placeholder={ethMethod === 'telebirr' ? '09XXXXXXXX or 07XXXXXXXX' : '1000XXXXXXXXX'}
                       className="form-input"
                       value={ethAccount}
@@ -288,7 +403,6 @@ export default function WithdrawView({ user, onStatusChange }) {
                     <input
                       type="text"
                       required
-                      disabled={liveStatus === 'pending'}
                       placeholder="e.g. Abebe Bikila"
                       className="form-input"
                       value={ethFullName}
@@ -297,31 +411,121 @@ export default function WithdrawView({ user, onStatusChange }) {
                   </div>
                 </>
               )}
-            </>
+            </div>
           )}
 
-          {/* Conditional Rendering: Global Crypto */}
-          {country === 'GLOBAL' && (
-            <div>
-              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                {t('withdraw.cryptoAddress')} *
-              </label>
-              <input
-                type="text"
-                required
-                disabled={liveStatus === 'pending'}
-                placeholder="EQ... (TON) or T... (TRC20 USDT)"
-                className="form-input"
-                value={cryptoAddress}
-                onChange={(e) => setCryptoAddress(e.target.value)}
-              />
+          {/* Conditional 2: All Other Countries -> Crypto with TON vs USDT Toggle */}
+          {selectedCountry && selectedCountry.code !== 'ET' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(15, 23, 42, 0.5)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              {/* Crypto Asset Switcher: TON vs USDT */}
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                  Choose Payout Asset *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setCryptoType('TON')}
+                    style={{
+                      padding: '12px 10px',
+                      borderRadius: 'var(--radius-md)',
+                      border: cryptoType === 'TON' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                      background: cryptoType === 'TON' ? 'rgba(59, 130, 246, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                      color: cryptoType === 'TON' ? '#fff' : 'var(--text-secondary)',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    💎 TON (The Open Network)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCryptoType('USDT')}
+                    style={{
+                      padding: '12px 10px',
+                      borderRadius: 'var(--radius-md)',
+                      border: cryptoType === 'USDT' ? '2px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                      background: cryptoType === 'USDT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                      color: cryptoType === 'USDT' ? '#fff' : 'var(--text-secondary)',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    💵 USDT (Tether USD)
+                  </button>
+                </div>
+              </div>
+
+              {/* USDT Network selector (if USDT selected) */}
+              {cryptoType === 'USDT' && (
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                    Select USDT Network:
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    {['TON', 'TRC20', 'BEP20'].map((net) => (
+                      <button
+                        key={net}
+                        type="button"
+                        onClick={() => setCryptoNetwork(net)}
+                        style={{
+                          padding: '6px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: cryptoNetwork === net ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                          background: cryptoNetwork === net ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                          color: cryptoNetwork === net ? 'var(--accent-emerald)' : 'var(--text-secondary)',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {net}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Crypto Address Input */}
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                  {cryptoType === 'TON' ? 'TON Wallet Address' : `USDT (${cryptoNetwork}) Payout Address`} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={
+                    cryptoType === 'TON'
+                      ? 'EQ... or UQ... (Telegram @wallet / Tonkeeper)'
+                      : cryptoNetwork === 'TRC20'
+                      ? 'T... (TRON Network USDT address)'
+                      : cryptoNetwork === 'TON'
+                      ? 'EQ... (TON Network USDT address)'
+                      : '0x... (BEP20 USDT address)'
+                  }
+                  className="form-input"
+                  value={cryptoAddress}
+                  onChange={(e) => setCryptoAddress(e.target.value)}
+                />
+              </div>
             </div>
           )}
 
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!country || submitting || liveStatus === 'pending'}
+            disabled={!selectedCountry || submitting || liveStatus === 'pending'}
             className="btn-primary"
             style={{
               marginTop: '8px',
@@ -413,7 +617,7 @@ export default function WithdrawView({ user, onStatusChange }) {
             </h3>
 
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '10px', lineHeight: '1.5' }}>
-              Your payout request has been successfully submitted and placed in our verification queue.
+              Your payout request has been successfully submitted and placed in our review queue.
             </p>
 
             {/* Waiting Time Notice Box */}
