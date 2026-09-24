@@ -68,3 +68,7 @@ export const withdrawalApi = {
       body: JSON.stringify(options)
     })
 };
+
+export const leaderboardApi = {
+  getData: () => apiRequest('/leaderboard/data', { method: 'GET' })
+};

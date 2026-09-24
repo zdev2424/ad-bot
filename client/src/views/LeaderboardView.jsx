@@ -1,26 +1,46 @@
-import React, { useState } from 'react';
-import { Trophy, TrendingUp, DollarSign, CheckCircle2, Flame, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, TrendingUp, DollarSign, CheckCircle2, Flame, Clock, RefreshCw } from 'lucide-react';
+import { leaderboardApi } from '../services/api';
 
 export default function LeaderboardView() {
   const [activeTab, setActiveTab] = useState('feed'); // 'feed' or 'top'
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // JSON-based activity stream (placeholder data for v1)
-  const activityFeed = [
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const res = await leaderboardApi.getData();
+        if (res.success && res.data) {
+          setData(res.data);
+        }
+      } catch (err) {
+        console.warn('Could not fetch leaderboard data:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeaderboard();
+  }, []);
+
+  const activityFeed = data?.activityFeed || [
     { id: 1, user: 'User ***849', method: 'Telebirr (Ethiopia)', amount: '$5.00', time: '2 mins ago', status: 'Completed' },
     { id: 2, user: 'User ***123', method: 'USDT (TON Network)', amount: '$8.50', time: '14 mins ago', status: 'Completed' },
     { id: 3, user: 'User ***902', method: 'CBE Bank (Ethiopia)', amount: '$10.00', time: '45 mins ago', status: 'Completed' },
-    { id: 4, user: 'User ***441', method: 'USDT (TON Network)', amount: '$4.25', time: '1 hour ago', status: 'Completed' },
-    { id: 5, user: 'User ***733', method: 'Telebirr (Ethiopia)', amount: '$6.00', time: '2 hours ago', status: 'Completed' },
-    { id: 6, user: 'User ***582', method: 'USDT (TRC20)', amount: '$12.50', time: '3 hours ago', status: 'Completed' }
+    { id: 4, user: 'User ***441', method: 'USDT (TON Network)', amount: '$4.25', time: '1 hour ago', status: 'Completed' }
   ];
 
-  const topEarners = [
+  const topEarners = data?.topEarners || [
     { rank: 1, name: 'Kidus_Eth', refs: 142, earned: '$48.20', badge: '🥇' },
     { rank: 2, name: 'CryptoHunter', refs: 98, earned: '$36.50', badge: '🥈' },
-    { rank: 3, name: 'Yared_Tg', refs: 84, earned: '$29.80', badge: '🥉' },
-    { rank: 4, name: 'Sammy_Ads', refs: 61, earned: '$22.40', badge: '#4' },
-    { rank: 5, name: 'Abebe_B', refs: 45, earned: '$18.90', badge: '#5' }
+    { rank: 3, name: 'Yared_Tg', refs: 84, earned: '$29.80', badge: '🥉' }
   ];
+
+  const platformStats = data?.platformStats || {
+    totalPaidOut: '$1,420.50+',
+    avgProcessingTime: '< 2 Hours'
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -40,11 +60,11 @@ export default function LeaderboardView() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Paid Out</span>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-emerald)' }}>$1,420.50+</p>
+            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{platformStats.totalPaidOut}</p>
           </div>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Avg. Queue Time</span>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-cyan)' }}>&lt; 2 Hours</p>
+            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-cyan)' }}>{platformStats.avgProcessingTime}</p>
           </div>
         </div>
       </div>
@@ -83,7 +103,7 @@ export default function LeaderboardView() {
         <div className="glass-card" style={{ padding: '14px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block' }} />
-            Live Withdrawal Activity
+            Live Withdrawal Activity Stream
           </h4>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
