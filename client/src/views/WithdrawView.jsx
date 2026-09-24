@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, RefreshCw } from 'lucide-react';
+import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, X, Sparkles, HelpCircle } from 'lucide-react';
 import { withdrawalApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function WithdrawView({ user, onStatusChange }) {
   const { t } = useLanguage();
-  const [country, setCountry] = useState('ET'); // 'ET' (Ethiopia) or 'GLOBAL'
-  const [ethMethod, setEthMethod] = useState('telebirr'); // 'telebirr' or 'cbe'
+  const [country, setCountry] = useState(''); // No country selected by default
+  const [ethMethod, setEthMethod] = useState(''); // 'telebirr' or 'cbe'
   const [cryptoAddress, setCryptoAddress] = useState('');
   const [ethAccount, setEthAccount] = useState('');
   const [ethFullName, setEthFullName] = useState('');
@@ -14,6 +14,10 @@ export default function WithdrawView({ user, onStatusChange }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [liveStatus, setLiveStatus] = useState(user?.withdrawalStatus || 'none');
+  const [showQueueModal, setShowQueueModal] = useState(false);
+
+  // Dynamic estimated wait time for the popup
+  const estimatedWaitTime = '2 days (approx. 48 hours)';
 
   useEffect(() => {
     async function fetchStatus() {
@@ -41,6 +45,16 @@ export default function WithdrawView({ user, onStatusChange }) {
     e.preventDefault();
     setErrorMsg(null);
 
+    if (!country) {
+      setErrorMsg('Please select your country first.');
+      return;
+    }
+
+    if (country === 'ET' && !ethMethod) {
+      setErrorMsg('Please select your payment provider (Telebirr or CBE Bank).');
+      return;
+    }
+
     if (!isFullyEligible) {
       setErrorMsg('Eligibility gate locked: Requires 20 ads watched and 10 referrals.');
       return;
@@ -48,9 +62,11 @@ export default function WithdrawView({ user, onStatusChange }) {
 
     setSubmitting(true);
     try {
+      // Call backend (v1: status flag only, no address data sent)
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
         setLiveStatus('pending');
+        setShowQueueModal(true); // Open the Pending in Queue popup modal
         if (onStatusChange) {
           onStatusChange('pending');
         }
@@ -62,42 +78,8 @@ export default function WithdrawView({ user, onStatusChange }) {
     }
   };
 
-  if (liveStatus === 'pending' || liveStatus === 'in_queue') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div className="glass-card" style={{ textAlign: 'center', padding: '24px 16px', borderColor: 'rgba(245, 158, 11, 0.4)' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Clock size={28} color="var(--accent-amber)" />
-          </div>
-          <span className="badge badge-amber" style={{ marginBottom: '8px' }}>
-            {t('withdraw.statusInQueue')}
-          </span>
-          <h3 style={{ fontSize: '20px', fontWeight: '800', marginTop: '6px' }}>{t('withdraw.inQueueTitle')}</h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
-            {t('withdraw.inQueueSubtitle')}
-          </p>
-
-          <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: 'var(--radius-md)', textAlign: 'left', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Amount:</span>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-emerald)' }}>${balance.toFixed(2)} USD</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Queue Position:</span>
-              <span style={{ fontSize: '12px', fontWeight: '600' }}>#14 in line</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Security Gate:</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent-emerald)' }}>Passed (20/20 Ads, 10/10 Refs)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
       {/* Header */}
       <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%)', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -110,6 +92,27 @@ export default function WithdrawView({ user, onStatusChange }) {
           </div>
         </div>
       </div>
+
+      {/* If already in queue, show the persistent status banner */}
+      {(liveStatus === 'pending' || liveStatus === 'in_queue') && (
+        <div className="glass-card" style={{ borderColor: 'rgba(245, 158, 11, 0.5)', background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span className="badge badge-amber">
+              <Clock size={12} /> Status: Pending in Queue
+            </span>
+            <button
+              onClick={() => setShowQueueModal(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--accent-cyan)', fontSize: '11px', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              View Queue Details
+            </button>
+          </div>
+          <p style={{ fontSize: '13px', fontWeight: '600' }}>Your withdrawal request of ${balance.toFixed(2)} is being reviewed.</p>
+          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            ⏱️ Estimated wait time: <strong style={{ color: 'var(--accent-amber)' }}>{estimatedWaitTime}</strong>
+          </p>
+        </div>
+      )}
 
       {/* Error Banner */}
       {errorMsg && (
@@ -169,52 +172,57 @@ export default function WithdrawView({ user, onStatusChange }) {
         </div>
       </div>
 
-      {/* Payment Form (UI-Only for v1) */}
+      {/* Payment Form */}
       <div className="glass-card" style={{ opacity: isFullyEligible ? 1 : 0.6 }}>
         <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>{t('withdraw.payoutMethod')}</h4>
 
         <form onSubmit={handleSubmitWithdrawal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Country Selector */}
+          {/* Country Selector (No default selection) */}
           <div>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-              {t('withdraw.selectCountry')}
+              {t('withdraw.selectCountry')} *
             </label>
             <select
               className="form-select"
               value={country}
-              disabled={!isFullyEligible}
-              onChange={(e) => setCountry(e.target.value)}
+              disabled={!isFullyEligible || liveStatus === 'pending'}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setEthMethod(''); // reset sub-provider on country change
+              }}
             >
-              <option value="ET">🇪🇹 Ethiopia (Telebirr / CBE)</option>
-              <option value="GLOBAL">🌍 Global / East Africa (USDT / Crypto Address)</option>
+              <option value="">-- Choose Your Country --</option>
+              <option value="ET">🇪🇹 Ethiopia</option>
+              <option value="GLOBAL">🌍 Global / Other Countries</option>
             </select>
           </div>
 
-          {country === 'ET' ? (
+          {/* Conditional Rendering: Ethiopia Options (Telebirr / CBE only appear if Ethiopia is selected) */}
+          {country === 'ET' && (
             <>
-              {/* Ethiopian Payment Method */}
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                  {t('withdraw.provider')}
+                  {t('withdraw.provider')} (Ethiopia) *
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
                     type="button"
-                    disabled={!isFullyEligible}
+                    disabled={!isFullyEligible || liveStatus === 'pending'}
                     onClick={() => setEthMethod('telebirr')}
                     style={{
-                      padding: '10px',
+                      padding: '12px 10px',
                       borderRadius: 'var(--radius-md)',
-                      border: ethMethod === 'telebirr' ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)',
-                      background: ethMethod === 'telebirr' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                      border: ethMethod === 'telebirr' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                      background: ethMethod === 'telebirr' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(15, 23, 42, 0.6)',
                       color: ethMethod === 'telebirr' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '12px',
+                      fontSize: '13px',
                       fontWeight: '700',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px'
+                      gap: '6px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     <Smartphone size={16} color="var(--accent-cyan)" /> Telebirr
@@ -222,21 +230,22 @@ export default function WithdrawView({ user, onStatusChange }) {
 
                   <button
                     type="button"
-                    disabled={!isFullyEligible}
+                    disabled={!isFullyEligible || liveStatus === 'pending'}
                     onClick={() => setEthMethod('cbe')}
                     style={{
-                      padding: '10px',
+                      padding: '12px 10px',
                       borderRadius: 'var(--radius-md)',
-                      border: ethMethod === 'cbe' ? '1px solid var(--accent-purple)' : '1px solid var(--border-color)',
+                      border: ethMethod === 'cbe' ? '2px solid var(--accent-purple)' : '1px solid var(--border-color)',
                       background: ethMethod === 'cbe' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(15, 23, 42, 0.6)',
                       color: ethMethod === 'cbe' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '12px',
+                      fontSize: '13px',
                       fontWeight: '700',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px'
+                      gap: '6px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     <Building size={16} color="var(--accent-purple)" /> CBE Bank
@@ -244,49 +253,53 @@ export default function WithdrawView({ user, onStatusChange }) {
                 </div>
               </div>
 
-              {/* Account / Phone Number */}
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                  {t('withdraw.accountNumber')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={!isFullyEligible}
-                  placeholder={ethMethod === 'telebirr' ? '09XXXXXXXX or 07XXXXXXXX' : '1000XXXXXXXXX'}
-                  className="form-input"
-                  value={ethAccount}
-                  onChange={(e) => setEthAccount(e.target.value)}
-                />
-              </div>
+              {ethMethod && (
+                <>
+                  <div>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                      {ethMethod === 'telebirr' ? 'Telebirr Phone Number' : 'CBE Account Number'} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      disabled={!isFullyEligible || liveStatus === 'pending'}
+                      placeholder={ethMethod === 'telebirr' ? '09XXXXXXXX or 07XXXXXXXX' : '1000XXXXXXXXX'}
+                      className="form-input"
+                      value={ethAccount}
+                      onChange={(e) => setEthAccount(e.target.value)}
+                    />
+                  </div>
 
-              {/* Full Name */}
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                  {t('withdraw.fullName')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  disabled={!isFullyEligible}
-                  placeholder="e.g. Abebe Bikila"
-                  className="form-input"
-                  value={ethFullName}
-                  onChange={(e) => setEthFullName(e.target.value)}
-                />
-              </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                      {t('withdraw.fullName')} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      disabled={!isFullyEligible || liveStatus === 'pending'}
+                      placeholder="e.g. Abebe Bikila"
+                      className="form-input"
+                      value={ethFullName}
+                      onChange={(e) => setEthFullName(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
             </>
-          ) : (
-            /* Global Crypto Address */
+          )}
+
+          {/* Conditional Rendering: Global Crypto */}
+          {country === 'GLOBAL' && (
             <div>
               <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                {t('withdraw.cryptoAddress')}
+                {t('withdraw.cryptoAddress')} *
               </label>
               <input
                 type="text"
                 required
-                disabled={!isFullyEligible}
-                placeholder="EQ... (TON) or T... (TRC20)"
+                disabled={!isFullyEligible || liveStatus === 'pending'}
+                placeholder="EQ... (TON) or T... (TRC20 USDT)"
                 className="form-input"
                 value={cryptoAddress}
                 onChange={(e) => setCryptoAddress(e.target.value)}
@@ -297,7 +310,7 @@ export default function WithdrawView({ user, onStatusChange }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isFullyEligible || submitting}
+            disabled={!isFullyEligible || !country || submitting || liveStatus === 'pending'}
             className="btn-primary"
             style={{ marginTop: '8px' }}
           >
@@ -306,10 +319,110 @@ export default function WithdrawView({ user, onStatusChange }) {
             ) : (
               <Wallet size={16} />
             )}
-            {submitting ? 'Placing in Queue...' : `${t('withdraw.requestButton')} ($${balance.toFixed(2)})`}
+            {liveStatus === 'pending'
+              ? 'Request in Queue'
+              : submitting
+              ? 'Placing in Queue...'
+              : `${t('withdraw.requestButton')} ($${balance.toFixed(2)})`}
           </button>
         </form>
       </div>
+
+      {/* Pop-up Modal for "Pending in Queue" */}
+      {showQueueModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 1000,
+            animation: 'fadeIn 0.2s ease'
+          }}
+        >
+          <div
+            className="glass-card"
+            style={{
+              width: '100%',
+              maxWidth: '380px',
+              textAlign: 'center',
+              padding: '24px 20px',
+              borderColor: 'rgba(245, 158, 11, 0.5)',
+              background: 'linear-gradient(180deg, rgba(26, 35, 58, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+              position: 'relative'
+            }}
+          >
+            <button
+              onClick={() => setShowQueueModal(false)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: 'rgba(255,255,255,0.08)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <X size={16} />
+            </button>
+
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <Clock size={30} color="var(--accent-amber)" />
+            </div>
+
+            <span className="badge badge-amber" style={{ marginBottom: '10px' }}>
+              ⏳ Pending in Queue
+            </span>
+
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginTop: '4px' }}>
+              Withdrawal Placed in Queue!
+            </h3>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '10px', lineHeight: '1.5' }}>
+              Your payout request has been successfully submitted and placed in our verification queue.
+            </p>
+
+            {/* Waiting Time Notice Box */}
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.25)', textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Estimated Processing Time:</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-amber)' }}>{estimatedWaitTime}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Queue Position:</span>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-primary)' }}>#14 in line</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Requested Amount:</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)' }}>${balance.toFixed(2)} USD</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowQueueModal(false)}
+              className="btn-primary"
+              style={{ marginTop: '18px' }}
+            >
+              Got It / Return to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
