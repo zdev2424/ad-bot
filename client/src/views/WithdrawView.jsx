@@ -56,13 +56,13 @@ export default function WithdrawView({ user, onStatusChange }) {
     }
 
     if (!isFullyEligible) {
-      setErrorMsg('Eligibility gate locked: Requires 20 ads watched and 10 referrals.');
+      setErrorMsg('Eligibility gate locked: You must watch 20 ads and invite 10 friends (or toggle Dev Mode Test above).');
       return;
     }
 
     setSubmitting(true);
     try {
-      // Call backend (v1: status flag only, no address data sent)
+      // Call backend (v1: status flag only, zero address data sent)
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
         setLiveStatus('pending');
@@ -164,20 +164,24 @@ export default function WithdrawView({ user, onStatusChange }) {
         <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('withdraw.devBypass')}</span>
           <button
-            onClick={() => setDevBypass(!devBypass)}
-            style={{ background: 'none', border: '1px dashed var(--accent-blue)', color: 'var(--accent-blue)', borderRadius: 'var(--radius-sm)', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}
+            type="button"
+            onClick={() => {
+              setDevBypass(!devBypass);
+              setErrorMsg(null);
+            }}
+            style={{ background: 'none', border: '1px dashed var(--accent-blue)', color: 'var(--accent-cyan)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
           >
-            {devBypass ? 'Disable Bypass' : t('withdraw.forceUnlock')}
+            {devBypass ? '✅ Test Bypass Active (Disable)' : '⚡ ' + t('withdraw.forceUnlock')}
           </button>
         </div>
       </div>
 
-      {/* Payment Form */}
-      <div className="glass-card" style={{ opacity: isFullyEligible ? 1 : 0.6 }}>
+      {/* Payment Form (Always Interactive) */}
+      <div className="glass-card">
         <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>{t('withdraw.payoutMethod')}</h4>
 
         <form onSubmit={handleSubmitWithdrawal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Country Selector (No default selection) */}
+          {/* Country Selector */}
           <div>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
               {t('withdraw.selectCountry')} *
@@ -185,10 +189,11 @@ export default function WithdrawView({ user, onStatusChange }) {
             <select
               className="form-select"
               value={country}
-              disabled={!isFullyEligible || liveStatus === 'pending'}
+              disabled={liveStatus === 'pending'}
               onChange={(e) => {
                 setCountry(e.target.value);
                 setEthMethod(''); // reset sub-provider on country change
+                setErrorMsg(null);
               }}
             >
               <option value="">-- Choose Your Country --</option>
@@ -207,13 +212,16 @@ export default function WithdrawView({ user, onStatusChange }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
                     type="button"
-                    disabled={!isFullyEligible || liveStatus === 'pending'}
-                    onClick={() => setEthMethod('telebirr')}
+                    disabled={liveStatus === 'pending'}
+                    onClick={() => {
+                      setEthMethod('telebirr');
+                      setErrorMsg(null);
+                    }}
                     style={{
                       padding: '12px 10px',
                       borderRadius: 'var(--radius-md)',
                       border: ethMethod === 'telebirr' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-                      background: ethMethod === 'telebirr' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                      background: ethMethod === 'telebirr' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(15, 23, 42, 0.6)',
                       color: ethMethod === 'telebirr' ? '#fff' : 'var(--text-secondary)',
                       fontSize: '13px',
                       fontWeight: '700',
@@ -230,13 +238,16 @@ export default function WithdrawView({ user, onStatusChange }) {
 
                   <button
                     type="button"
-                    disabled={!isFullyEligible || liveStatus === 'pending'}
-                    onClick={() => setEthMethod('cbe')}
+                    disabled={liveStatus === 'pending'}
+                    onClick={() => {
+                      setEthMethod('cbe');
+                      setErrorMsg(null);
+                    }}
                     style={{
                       padding: '12px 10px',
                       borderRadius: 'var(--radius-md)',
                       border: ethMethod === 'cbe' ? '2px solid var(--accent-purple)' : '1px solid var(--border-color)',
-                      background: ethMethod === 'cbe' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                      background: ethMethod === 'cbe' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(15, 23, 42, 0.6)',
                       color: ethMethod === 'cbe' ? '#fff' : 'var(--text-secondary)',
                       fontSize: '13px',
                       fontWeight: '700',
@@ -262,7 +273,7 @@ export default function WithdrawView({ user, onStatusChange }) {
                     <input
                       type="text"
                       required
-                      disabled={!isFullyEligible || liveStatus === 'pending'}
+                      disabled={liveStatus === 'pending'}
                       placeholder={ethMethod === 'telebirr' ? '09XXXXXXXX or 07XXXXXXXX' : '1000XXXXXXXXX'}
                       className="form-input"
                       value={ethAccount}
@@ -277,7 +288,7 @@ export default function WithdrawView({ user, onStatusChange }) {
                     <input
                       type="text"
                       required
-                      disabled={!isFullyEligible || liveStatus === 'pending'}
+                      disabled={liveStatus === 'pending'}
                       placeholder="e.g. Abebe Bikila"
                       className="form-input"
                       value={ethFullName}
@@ -298,7 +309,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               <input
                 type="text"
                 required
-                disabled={!isFullyEligible || liveStatus === 'pending'}
+                disabled={liveStatus === 'pending'}
                 placeholder="EQ... (TON) or T... (TRC20 USDT)"
                 className="form-input"
                 value={cryptoAddress}
@@ -310,12 +321,18 @@ export default function WithdrawView({ user, onStatusChange }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isFullyEligible || !country || submitting || liveStatus === 'pending'}
+            disabled={!country || submitting || liveStatus === 'pending'}
             className="btn-primary"
-            style={{ marginTop: '8px' }}
+            style={{
+              marginTop: '8px',
+              opacity: !isFullyEligible ? 0.7 : 1,
+              background: !isFullyEligible ? 'rgba(255,255,255,0.1)' : 'var(--gradient-primary)'
+            }}
           >
             {submitting ? (
               <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            ) : !isFullyEligible ? (
+              <Lock size={16} color="var(--accent-amber)" />
             ) : (
               <Wallet size={16} />
             )}
@@ -323,6 +340,8 @@ export default function WithdrawView({ user, onStatusChange }) {
               ? 'Request in Queue'
               : submitting
               ? 'Placing in Queue...'
+              : !isFullyEligible
+              ? `Locked (${adsWatched}/20 Ads, ${referralCount}/10 Refs)`
               : `${t('withdraw.requestButton')} ($${balance.toFixed(2)})`}
           </button>
         </form>
