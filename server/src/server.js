@@ -9,6 +9,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import referralRoutes from './routes/referralRoutes.js';
 import withdrawalRoutes from './routes/withdrawalRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config({ path: '../.env' });
 dotenv.config(); // fallback to local .env
@@ -35,6 +36,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint (also used by keep-alive pings)
 app.get('/health', (req, res) => {

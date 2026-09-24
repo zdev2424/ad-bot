@@ -72,3 +72,13 @@ export const withdrawalApi = {
 export const leaderboardApi = {
   getData: () => apiRequest('/leaderboard/data', { method: 'GET' })
 };
+
+export const adminApi = {
+  getOverview: () => apiRequest('/admin/overview', { method: 'GET' }),
+  getWithdrawals: () => apiRequest('/admin/withdrawals', { method: 'GET' }),
+  updateWithdrawal: (id, action) =>
+    apiRequest(`/admin/withdrawals/${id}/action`, {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    })
+};

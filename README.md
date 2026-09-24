@@ -37,7 +37,7 @@ A Telegram Mini App (React frontend + Node.js backend) where users earn rewards 
 - [x] **Module 7 — Referral System**: Deep-link generation (`?start=ref_USERID`), attribution, and bonus credit logic.
 - [x] **Module 8 — Withdraw (v1 Placeholder)**: Eligibility gate (20 ads / 10 refs), UI-only payment selector, and status flip to pending/in queue (zero PII stored).
 - [x] **Module 9 — Leaderboard**: JSON-based withdrawal activity feed stream & top earners rankings.
-- [ ] **Module 10 — Admin**: Telegram ID check against `ADMIN_IDS`, withdrawal queue oversight, and platform stats.
+- [x] **Module 10 — Admin**: Telegram ID check against `ADMIN_IDS`, withdrawal queue moderation, and platform stats.
 - [ ] **Module 11 — Hardening**: Rate limiting, anti-fraud heuristics, request throttling.
 - [ ] **Module 12 — Deployment**: Free hosting deployment (Vercel + Render + Supabase/Neon), keep-alive ping, production Adsgram Block ID.
 - [ ] **Module 13 — Promotion**: Launch copy, Telegram channels/groups, directory submissions.
