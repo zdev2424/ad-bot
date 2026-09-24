@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { initDatabase } from './db/index.js';
+import { initTelegramBot } from './bot/bot.js';
 import authRoutes from './routes/authRoutes.js';
 
 dotenv.config({ path: '../.env' });
@@ -15,6 +17,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Initialize Database Schemas
+initDatabase();
+
+// Initialize Telegram Bot (if BOT_TOKEN is present)
+initTelegramBot();
+
 // Routes
 app.use('/api/auth', authRoutes);
 
@@ -23,6 +31,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     app: 'EarnCashIO Backend',
+    database: 'SQLite (WAL mode)',
     timestamp: new Date().toISOString()
   });
 });
