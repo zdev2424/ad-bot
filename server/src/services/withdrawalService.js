@@ -68,7 +68,7 @@ export const WithdrawalService = {
     const isEligible = (adsWatched >= REQUIRED_ADS_WATCHED && referrals >= REQUIRED_REFERRALS) || options.devBypass;
 
     if (!isEligible) {
-      throw new Error(`Eligibility gate locked: Requires at least ${REQUIRED_ADS_WATCHED} ads watched and ${REQUIRED_REFERRALS} referrals.`);
+      throw new Error(`Eligibility requirement not met: Requires at least ${REQUIRED_ADS_WATCHED} ads watched and ${REQUIRED_REFERRALS} friend referrals.`);
     }
 
     // Insert withdrawal queue entry (v1: status flag only, no payment address stored)

@@ -114,7 +114,7 @@ export default function WithdrawView({ user, onStatusChange }) {
     }
 
     if (!isFullyEligible) {
-      setErrorMsg('Eligibility gate locked: Requires 20 ads watched and 10 referrals (or click Dev Mode Test).');
+      setErrorMsg('Please complete 20 ad watches and 10 friend referrals to unlock withdrawals.');
       return;
     }
 
@@ -211,7 +211,7 @@ export default function WithdrawView({ user, onStatusChange }) {
         </div>
 
         {/* Referrals progress */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '4px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step2')}</span>
             <span style={{ fontWeight: '700', color: isRefEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
@@ -221,21 +221,6 @@ export default function WithdrawView({ user, onStatusChange }) {
           <div className="progress-bar-bg">
             <div className="progress-bar-fill" style={{ width: `${Math.min(100, (referralCount / 10) * 100)}%`, background: isRefEligible ? 'var(--gradient-emerald)' : 'var(--gradient-primary)' }} />
           </div>
-        </div>
-
-        {/* Dev Toggle Helper for testing */}
-        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('withdraw.devBypass')}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setDevBypass(!devBypass);
-              setErrorMsg(null);
-            }}
-            style={{ background: 'none', border: '1px dashed var(--accent-blue)', color: 'var(--accent-cyan)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            {devBypass ? '✅ Test Bypass Active (Disable)' : '⚡ ' + t('withdraw.forceUnlock')}
-          </button>
         </div>
       </div>
 
