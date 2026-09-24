@@ -120,6 +120,9 @@ export default function WithdrawView({ user, onStatusChange }) {
 
     setSubmitting(true);
     try {
+      // Show energetic effect for 1.1s for user feedback before launching popup
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
       // Call backend (v1: status flag only, zero address data sent)
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
@@ -585,28 +588,48 @@ export default function WithdrawView({ user, onStatusChange }) {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!selectedCountry || submitting || liveStatus === 'pending'}
-            className="btn-primary"
+            disabled={!selectedCountry || submitting || liveStatus === 'pending' || liveStatus === 'in_queue' || !isFullyEligible}
+            className={`btn-primary ${submitting ? 'btn-processing-effect' : ''}`}
             style={{
               marginTop: '8px',
               opacity: !isFullyEligible ? 0.7 : 1,
-              background: !isFullyEligible ? 'rgba(255,255,255,0.1)' : 'var(--gradient-primary)'
+              background: liveStatus === 'pending' || liveStatus === 'in_queue'
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                : !isFullyEligible
+                ? 'rgba(255,255,255,0.1)'
+                : submitting
+                ? undefined
+                : 'var(--gradient-primary)',
+              border: liveStatus === 'pending' || liveStatus === 'in_queue'
+                ? '1px solid rgba(245, 158, 11, 0.4)'
+                : undefined,
+              color: liveStatus === 'pending' || liveStatus === 'in_queue'
+                ? 'var(--accent-amber)'
+                : '#ffffff',
+              cursor: liveStatus === 'pending' || liveStatus === 'in_queue' ? 'not-allowed' : undefined
             }}
           >
             {submitting ? (
-              <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <>
+                <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span>Processing Payout...</span>
+              </>
+            ) : liveStatus === 'pending' || liveStatus === 'in_queue' ? (
+              <>
+                <Clock size={16} color="var(--accent-amber)" />
+                <span>Pending</span>
+              </>
             ) : !isFullyEligible ? (
-              <Lock size={16} color="var(--accent-amber)" />
+              <>
+                <Lock size={16} color="var(--accent-amber)" />
+                <span>Locked ({adsWatched}/20 Ads, {referralCount}/10 Refs)</span>
+              </>
             ) : (
-              <Wallet size={16} />
+              <>
+                <Wallet size={16} />
+                <span>{t('withdraw.requestButton')} (${balance.toFixed(2)})</span>
+              </>
             )}
-            {liveStatus === 'pending'
-              ? 'Request in Queue'
-              : submitting
-              ? 'Placing in Queue...'
-              : !isFullyEligible
-              ? `Locked (${adsWatched}/20 Ads, ${referralCount}/10 Refs)`
-              : `${t('withdraw.requestButton')} ($${balance.toFixed(2)})`}
           </button>
         </form>
       </div>
