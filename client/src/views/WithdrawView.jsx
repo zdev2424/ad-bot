@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, RefreshCw } from 'lucide-react';
 import { withdrawalApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function WithdrawView({ user, onStatusChange }) {
+  const { t } = useLanguage();
   const [country, setCountry] = useState('ET'); // 'ET' (Ethiopia) or 'GLOBAL'
   const [ethMethod, setEthMethod] = useState('telebirr'); // 'telebirr' or 'cbe'
   const [cryptoAddress, setCryptoAddress] = useState('');
@@ -13,7 +15,6 @@ export default function WithdrawView({ user, onStatusChange }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [liveStatus, setLiveStatus] = useState(user?.withdrawalStatus || 'none');
 
-  // Fetch live withdrawal and gate status
   useEffect(() => {
     async function fetchStatus() {
       try {
@@ -36,7 +37,6 @@ export default function WithdrawView({ user, onStatusChange }) {
   const isRefEligible = referralCount >= 10 || devBypass;
   const isFullyEligible = isAdsEligible && isRefEligible;
 
-  // Handle form submission (v1: status flag flip only, no address data sent to backend)
   const handleSubmitWithdrawal = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -48,7 +48,6 @@ export default function WithdrawView({ user, onStatusChange }) {
 
     setSubmitting(true);
     try {
-      // Call backend (sends zero address payload)
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
         setLiveStatus('pending');
@@ -63,7 +62,6 @@ export default function WithdrawView({ user, onStatusChange }) {
     }
   };
 
-  // If user already has a pending/in_queue withdrawal, show the status queue card
   if (liveStatus === 'pending' || liveStatus === 'in_queue') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -72,11 +70,11 @@ export default function WithdrawView({ user, onStatusChange }) {
             <Clock size={28} color="var(--accent-amber)" />
           </div>
           <span className="badge badge-amber" style={{ marginBottom: '8px' }}>
-            Status: In Queue / Pending Review
+            {t('withdraw.statusInQueue')}
           </span>
-          <h3 style={{ fontSize: '20px', fontWeight: '800', marginTop: '6px' }}>Withdrawal Requested</h3>
+          <h3 style={{ fontSize: '20px', fontWeight: '800', marginTop: '6px' }}>{t('withdraw.inQueueTitle')}</h3>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
-            Your withdrawal request has been placed in the review queue. Once processed by our administrator, funds will be released.
+            {t('withdraw.inQueueSubtitle')}
           </p>
 
           <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: 'var(--radius-md)', textAlign: 'left', border: '1px solid var(--border-color)' }}>
@@ -107,8 +105,8 @@ export default function WithdrawView({ user, onStatusChange }) {
             <Wallet size={20} color="var(--accent-emerald)" />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Withdraw Earnings</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Available Balance: ${balance.toFixed(3)} USD</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('withdraw.title')}</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('withdraw.availableBalance')}: ${balance.toFixed(3)} USD</p>
           </div>
         </div>
       </div>
@@ -126,7 +124,7 @@ export default function WithdrawView({ user, onStatusChange }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
             {isFullyEligible ? <ShieldCheck size={18} color="var(--accent-emerald)" /> : <Lock size={18} color="var(--accent-amber)" />}
-            Eligibility Gate (20 Ads & 10 Referrals)
+            {t('withdraw.gateTitle')}
           </h4>
           <span className={`badge ${isFullyEligible ? 'badge-emerald' : 'badge-amber'}`}>
             {isFullyEligible ? 'Unlocked' : 'Locked'}
@@ -136,7 +134,7 @@ export default function WithdrawView({ user, onStatusChange }) {
         {/* Ad watches progress */}
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>1. Watch 20 Total Ads</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step1')}</span>
             <span style={{ fontWeight: '700', color: isAdsEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {adsWatched} / 20 {isAdsEligible && '✓'}
             </span>
@@ -149,7 +147,7 @@ export default function WithdrawView({ user, onStatusChange }) {
         {/* Referrals progress */}
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>2. Invite 10 Friends</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step2')}</span>
             <span style={{ fontWeight: '700', color: isRefEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {referralCount} / 10 {isRefEligible && '✓'}
             </span>
@@ -161,25 +159,25 @@ export default function WithdrawView({ user, onStatusChange }) {
 
         {/* Dev Toggle Helper for testing */}
         <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Dev Mode Gate Test</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('withdraw.devBypass')}</span>
           <button
             onClick={() => setDevBypass(!devBypass)}
             style={{ background: 'none', border: '1px dashed var(--accent-blue)', color: 'var(--accent-blue)', borderRadius: 'var(--radius-sm)', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}
           >
-            {devBypass ? 'Disable Bypass' : 'Force Unlock Gate (Test)'}
+            {devBypass ? 'Disable Bypass' : t('withdraw.forceUnlock')}
           </button>
         </div>
       </div>
 
       {/* Payment Form (UI-Only for v1) */}
       <div className="glass-card" style={{ opacity: isFullyEligible ? 1 : 0.6 }}>
-        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>Payout Method & Details</h4>
+        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '14px' }}>{t('withdraw.payoutMethod')}</h4>
 
         <form onSubmit={handleSubmitWithdrawal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Country Selector */}
           <div>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-              Select Your Country
+              {t('withdraw.selectCountry')}
             </label>
             <select
               className="form-select"
@@ -188,7 +186,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               onChange={(e) => setCountry(e.target.value)}
             >
               <option value="ET">🇪🇹 Ethiopia (Telebirr / CBE)</option>
-              <option value="GLOBAL">🌍 Global (USDT / Crypto Address)</option>
+              <option value="GLOBAL">🌍 Global / East Africa (USDT / Crypto Address)</option>
             </select>
           </div>
 
@@ -197,7 +195,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               {/* Ethiopian Payment Method */}
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                  Payment Provider
+                  {t('withdraw.provider')}
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
@@ -249,7 +247,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               {/* Account / Phone Number */}
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                  {ethMethod === 'telebirr' ? 'Telebirr Phone Number' : 'CBE Account Number'}
+                  {t('withdraw.accountNumber')}
                 </label>
                 <input
                   type="text"
@@ -265,7 +263,7 @@ export default function WithdrawView({ user, onStatusChange }) {
               {/* Full Name */}
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                  Account Holder Full Name
+                  {t('withdraw.fullName')}
                 </label>
                 <input
                   type="text"
@@ -282,7 +280,7 @@ export default function WithdrawView({ user, onStatusChange }) {
             /* Global Crypto Address */
             <div>
               <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                Crypto Payout Address (USDT - TON / TRC20)
+                {t('withdraw.cryptoAddress')}
               </label>
               <input
                 type="text"
@@ -308,7 +306,7 @@ export default function WithdrawView({ user, onStatusChange }) {
             ) : (
               <Wallet size={16} />
             )}
-            {submitting ? 'Placing in Queue...' : `Request Withdrawal ($${balance.toFixed(2)})`}
+            {submitting ? 'Placing in Queue...' : `${t('withdraw.requestButton')} ($${balance.toFixed(2)})`}
           </button>
         </form>
       </div>

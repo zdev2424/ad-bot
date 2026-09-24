@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, DollarSign, CheckCircle2, Flame, Clock, RefreshCw } from 'lucide-react';
 import { leaderboardApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function LeaderboardView() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('feed'); // 'feed' or 'top'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,19 +53,19 @@ export default function LeaderboardView() {
             <Trophy size={20} color="var(--accent-amber)" />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Live Activity & Rankings</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Real-time platform payouts and leaderboards</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('leaderboard.title')}</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('leaderboard.subtitle')}</p>
           </div>
         </div>
 
         {/* Trust Badges */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Paid Out</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('leaderboard.totalPaid')}</span>
             <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{platformStats.totalPaidOut}</p>
           </div>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Avg. Queue Time</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('leaderboard.avgTime')}</span>
             <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-cyan)' }}>{platformStats.avgProcessingTime}</p>
           </div>
         </div>
@@ -81,7 +83,7 @@ export default function LeaderboardView() {
             fontSize: '13px'
           }}
         >
-          <Clock size={16} /> Recent Withdrawals
+          <Clock size={16} /> {t('leaderboard.recentTab')}
         </button>
 
         <button
@@ -94,7 +96,7 @@ export default function LeaderboardView() {
             fontSize: '13px'
           }}
         >
-          <Flame size={16} /> Top Earners
+          <Flame size={16} /> {t('leaderboard.topTab')}
         </button>
       </div>
 
@@ -103,7 +105,7 @@ export default function LeaderboardView() {
         <div className="glass-card" style={{ padding: '14px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block' }} />
-            Live Withdrawal Activity Stream
+            {t('leaderboard.streamTitle')}
           </h4>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -140,7 +142,7 @@ export default function LeaderboardView() {
         </div>
       ) : (
         <div className="glass-card" style={{ padding: '14px' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>This Week's Top Referrers</h4>
+          <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('leaderboard.topTitle')}</h4>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {topEarners.map((earner) => (

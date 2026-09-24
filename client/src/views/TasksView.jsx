@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Tv, CheckCircle, Clock, PlayCircle, Sparkles, AlertCircle, RefreshCw, Zap } from 'lucide-react';
 import { adsgramService } from '../services/adsgram';
 import { tasksApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function TasksView({ user, onAdCompleted }) {
+  const { t } = useLanguage();
   const [watchingSlot, setWatchingSlot] = useState(null);
   const [cooldownTime, setCooldownTime] = useState(0);
   const [notification, setNotification] = useState(null);
@@ -12,7 +14,6 @@ export default function TasksView({ user, onAdCompleted }) {
 
   const totalSlots = 100;
 
-  // Initialize Adsgram SDK & load live task status from backend
   useEffect(() => {
     adsgramService.init();
 
@@ -35,7 +36,6 @@ export default function TasksView({ user, onAdCompleted }) {
     fetchTaskStatus();
   }, []);
 
-  // Cooldown countdown timer
   useEffect(() => {
     if (cooldownTime <= 0) return;
 
@@ -52,15 +52,14 @@ export default function TasksView({ user, onAdCompleted }) {
     return () => clearInterval(timer);
   }, [cooldownTime]);
 
-  // Execute Ad Watch Flow
   const handleWatchAd = async (slotNum) => {
     if (cooldownTime > 0) {
-      setNotification({ type: 'warning', text: `Please wait ${cooldownTime}s before watching the next ad.` });
+      setNotification({ type: 'warning', text: t('tasks.nextUnlock', { time: cooldownTime }) });
       return;
     }
 
     if (completedSlots.includes(slotNum)) {
-      setNotification({ type: 'info', text: `Slot #${slotNum} already completed today! Resets at 00:00 UTC.` });
+      setNotification({ type: 'info', text: `Slot #${slotNum} already completed today!` });
       return;
     }
 
@@ -68,10 +67,7 @@ export default function TasksView({ user, onAdCompleted }) {
     setNotification(null);
 
     try {
-      // 1. Play Rewarded Ad through Adsgram SDK
       await adsgramService.showRewardedAd();
-
-      // 2. Call Backend API to verify and credit balance
       const result = await tasksApi.complete(slotNum);
 
       if (result.success) {
@@ -111,17 +107,17 @@ export default function TasksView({ user, onAdCompleted }) {
               <Tv size={18} color="var(--accent-blue)" />
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '800' }}>100 Ad Slots Grid</h3>
-              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>5 Columns × 20 Rows</p>
+              <h3 style={{ fontSize: '16px', fontWeight: '800' }}>{t('tasks.gridTitle')}</h3>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('tasks.gridSubtitle')}</p>
             </div>
           </div>
-          <span className="badge badge-emerald">+$0.005 / Slot</span>
+          <span className="badge badge-emerald">{t('tasks.adReward')}</span>
         </div>
 
         {/* Progress Bar */}
         <div style={{ marginTop: '10px', marginBottom: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Daily Progress</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{t('tasks.dailyProgress')}</span>
             <span style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>
               {watchedCount} / {totalSlots} ({progressPercent}%)
             </span>
@@ -136,7 +132,7 @@ export default function TasksView({ user, onAdCompleted }) {
           <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
             <Clock size={16} color="var(--accent-amber)" />
             <span style={{ fontSize: '12px', color: 'var(--accent-amber)', fontWeight: '600' }}>
-              Next slot unlocks in {cooldownTime}s...
+              {t('tasks.nextUnlock', { time: cooldownTime })}
             </span>
           </div>
         )}
@@ -163,15 +159,15 @@ export default function TasksView({ user, onAdCompleted }) {
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(16, 185, 129, 0.3)', border: '1px solid var(--accent-emerald)' }} />
-          <span>Watched</span>
+          <span>{t('tasks.watched')}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--gradient-primary)' }} />
-          <span>Next Ready</span>
+          <span>{t('tasks.nextReady')}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)' }} />
-          <span>Locked</span>
+          <span>{t('tasks.locked')}</span>
         </div>
       </div>
 
@@ -193,17 +189,14 @@ export default function TasksView({ user, onAdCompleted }) {
 
           let cardBg = 'rgba(18, 24, 38, 0.7)';
           let borderColor = 'var(--border-color)';
-          let textColor = 'var(--text-muted)';
           let shadow = 'none';
 
           if (isWatched) {
             cardBg = 'rgba(16, 185, 129, 0.12)';
             borderColor = 'rgba(16, 185, 129, 0.35)';
-            textColor = 'var(--accent-emerald)';
           } else if (isCurrentTarget) {
             cardBg = 'linear-gradient(135deg, rgba(30, 58, 138, 0.7) 0%, rgba(14, 116, 144, 0.7) 100%)';
             borderColor = 'var(--accent-cyan)';
-            textColor = '#ffffff';
             shadow = '0 0 12px rgba(6, 182, 212, 0.35)';
           }
 
@@ -224,7 +217,7 @@ export default function TasksView({ user, onAdCompleted }) {
                 justifyContent: 'center',
                 gap: '2px',
                 padding: '4px',
-                cursor: isWatched ? 'default' : isCurrentTarget ? 'pointer' : 'pointer',
+                cursor: isWatched ? 'default' : 'pointer',
                 opacity: isFutureLocked ? 0.7 : 1,
                 position: 'relative',
                 transition: 'all 0.2s ease',
@@ -242,7 +235,7 @@ export default function TasksView({ user, onAdCompleted }) {
                 <>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: '#fff' }}>#{slotNumber}</span>
                   <PlayCircle size={14} color="var(--accent-cyan)" />
-                  <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--accent-cyan)' }}>WATCH</span>
+                  <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{t('tasks.watch')}</span>
                 </>
               ) : (
                 <>

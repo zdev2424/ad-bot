@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Copy, Check, Share2, Gift, Sparkles, UserPlus, RefreshCw } from 'lucide-react';
 import { referralApi } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ReferralView({ user }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,18 +60,18 @@ export default function ReferralView({ user }) {
             <Gift size={20} color="var(--accent-purple)" />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Invite & Earn</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Get $0.05 for every friend you invite</p>
+            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('refer.title')}</h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.subtitle')}</p>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Invited Friends</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('refer.invitedFriends')}</span>
             <p style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>{referralCount}</p>
           </div>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Ref Earnings</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('refer.refEarnings')}</span>
             <p style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-emerald)' }}>${referralBonusEarned}</p>
           </div>
         </div>
@@ -78,7 +80,7 @@ export default function ReferralView({ user }) {
       {/* Referral Link & Actions */}
       <div className="glass-card">
         <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
-          Your Unique Referral Link
+          {t('refer.uniqueLink')}
         </label>
 
         <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '4px 6px 4px 12px', marginBottom: '12px' }}>
@@ -94,43 +96,43 @@ export default function ReferralView({ user }) {
             style={{ padding: '8px 12px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
           >
             {copied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? t('refer.copied') : t('refer.copy')}
           </button>
         </div>
 
         <button className="btn-primary" onClick={handleShare} style={{ background: 'var(--gradient-purple)' }}>
           <Share2 size={16} />
-          Share to Telegram Contacts
+          {t('refer.shareTelegram')}
         </button>
       </div>
 
       {/* How it Works Guide */}
       <div className="glass-card">
-        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>How the Referral Program Works</h4>
+        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('refer.howItWorks')}</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
             <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>1</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Share your personal invite link with friends, Telegram groups, or social media.</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step1')}</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>2</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>When your friend opens the bot and launches the Mini App, you instantly receive +$0.05 commission.</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step2')}</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>3</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Refer at least 10 friends to unlock the withdrawal eligibility gate!</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step3')}</p>
           </div>
         </div>
       </div>
 
       {/* Invited Friends List */}
       <div className="glass-card">
-        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Invited Friends ({referralCount > 0 ? referralCount : '0'})</h4>
+        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('refer.invitedFriends')} ({referralCount > 0 ? referralCount : '0'})</h4>
         {invitedFriends.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '16px 8px' }}>
             <UserPlus size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px', display: 'block' }} />
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>No friends invited yet.</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Share your link above to start earning!</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('refer.noFriends')}</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{t('refer.shareToStart')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Navbar from './components/Navbar';
+import LanguageSelector from './components/LanguageSelector';
 import DashboardView from './views/DashboardView';
 import TasksView from './views/TasksView';
 import ReferralView from './views/ReferralView';
@@ -11,6 +13,7 @@ import { Sparkles, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
   const { user, setUser, loading } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   if (loading) {
@@ -76,7 +79,7 @@ function AppContent() {
   return (
     <div className="app-container">
       {/* Top Header */}
-      <header style={{ padding: '16px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', background: 'rgba(10, 14, 23, 0.8)', backdropFilter: 'blur(10px)', position: 'sticky', top: 0, zIndex: 90 }}>
+      <header style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', background: 'rgba(10, 14, 23, 0.85)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 90 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '13px', color: '#fff' }}>
             ⚡
@@ -89,6 +92,9 @@ function AppContent() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Language Selector Dropdown */}
+          <LanguageSelector />
+
           {user?.isAdmin && (
             <button
               onClick={() => setActiveTab(activeTab === 'admin' ? 'dashboard' : 'admin')}
@@ -106,6 +112,7 @@ function AppContent() {
               ADMIN
             </button>
           )}
+
           <div className="badge badge-blue">
             ${user?.balance?.toFixed(2) || '0.00'}
           </div>
@@ -131,7 +138,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
     </AuthProvider>
   );
 }

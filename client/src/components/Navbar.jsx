@@ -1,17 +1,20 @@
 import React from 'react';
 import { LayoutDashboard, Tv, Users, Wallet, Trophy, ShieldAlert } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Navbar({ activeTab, setActiveTab, isAdmin }) {
+  const { t } = useLanguage();
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'tasks', label: 'Tasks', icon: Tv },
-    { id: 'refer', label: 'Refer', icon: Users },
-    { id: 'withdraw', label: 'Withdraw', icon: Wallet },
-    { id: 'leaderboard', label: 'Activity', icon: Trophy }
+    { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { id: 'tasks', label: t('nav.tasks'), icon: Tv },
+    { id: 'refer', label: t('nav.refer'), icon: Users },
+    { id: 'withdraw', label: t('nav.withdraw'), icon: Wallet },
+    { id: 'leaderboard', label: t('nav.activity'), icon: Trophy }
   ];
 
   if (isAdmin) {
-    navItems.push({ id: 'admin', label: 'Admin', icon: ShieldAlert });
+    navItems.push({ id: 'admin', label: t('nav.admin'), icon: ShieldAlert });
   }
 
   return (
