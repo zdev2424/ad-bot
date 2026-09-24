@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, X, Sparkles, Search, ChevronDown, Coins } from 'lucide-react';
+import { Wallet, ShieldCheck, Lock, CheckCircle2, Clock, AlertCircle, Building, Smartphone, Globe, X, Sparkles, Search, ChevronDown, Coins, ArrowRightLeft } from 'lucide-react';
 import { withdrawalApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { ALL_COUNTRIES } from '../utils/countries';
+import { COUNTRY_PAYMENT_CONFIG } from '../utils/paymentMethods';
 
 export default function WithdrawView({ user, onStatusChange }) {
   const { t } = useLanguage();
@@ -10,15 +11,17 @@ export default function WithdrawView({ user, onStatusChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
+  // Payment Type Mode: 'local' or 'crypto'
+  const [payoutMode, setPayoutMode] = useState('local'); // 'local' | 'crypto'
+
+  // Selected Local Method & Field values
+  const [localMethodId, setLocalMethodId] = useState('');
+  const [localFormData, setLocalFormData] = useState({});
+
   // Crypto Toggle: 'TON' or 'USDT'
   const [cryptoType, setCryptoType] = useState('USDT'); 
   const [cryptoNetwork, setCryptoNetwork] = useState('TON'); // 'TON', 'TRC20', 'BEP20'
   const [cryptoAddress, setCryptoAddress] = useState('');
-  
-  // Ethiopian fields
-  const [ethMethod, setEthMethod] = useState(''); // 'telebirr' or 'cbe'
-  const [ethAccount, setEthAccount] = useState('');
-  const [ethFullName, setEthFullName] = useState('');
 
   const [devBypass, setDevBypass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +65,10 @@ export default function WithdrawView({ user, onStatusChange }) {
   const isRefEligible = referralCount >= 10 || devBypass;
   const isFullyEligible = isAdsEligible && isRefEligible;
 
+  // Current country config if available
+  const countryConfig = selectedCountry ? COUNTRY_PAYMENT_CONFIG[selectedCountry.code] : null;
+  const hasLocalMethods = Boolean(countryConfig && countryConfig.methods?.length > 0);
+
   // Filter countries alphabetically by search query
   const filteredCountries = ALL_COUNTRIES.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,8 +79,24 @@ export default function WithdrawView({ user, onStatusChange }) {
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery('');
-    setEthMethod(''); // reset sub-methods
     setErrorMsg(null);
+    setLocalFormData({});
+
+    const config = COUNTRY_PAYMENT_CONFIG[country.code];
+    if (config && config.methods.length > 0) {
+      setPayoutMode('local');
+      setLocalMethodId(config.methods[0].id);
+    } else {
+      setPayoutMode('crypto');
+      setLocalMethodId('');
+    }
+  };
+
+  const handleLocalFieldChange = (fieldName, value) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      [fieldName]: value
+    }));
   };
 
   const handleSubmitWithdrawal = async (e) => {
@@ -85,8 +108,8 @@ export default function WithdrawView({ user, onStatusChange }) {
       return;
     }
 
-    if (selectedCountry.code === 'ET' && !ethMethod) {
-      setErrorMsg('Please select your Ethiopian provider (Telebirr or CBE Bank).');
+    if (payoutMode === 'local' && hasLocalMethods && !localMethodId) {
+      setErrorMsg('Please select a local payment provider.');
       return;
     }
 
@@ -112,6 +135,8 @@ export default function WithdrawView({ user, onStatusChange }) {
       setSubmitting(false);
     }
   };
+
+  const currentLocalMethod = countryConfig?.methods?.find((m) => m.id === localMethodId) || countryConfig?.methods?.[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
@@ -244,6 +269,11 @@ export default function WithdrawView({ user, onStatusChange }) {
                   <>
                     <span style={{ fontSize: '18px' }}>{selectedCountry.flag}</span>
                     <span style={{ fontWeight: '600' }}>{selectedCountry.name}</span>
+                    {countryConfig?.currency && (
+                      <span style={{ fontSize: '11px', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-cyan)', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>
+                        {countryConfig.currency}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span>-- Search or Choose Your Country --</span>
@@ -300,7 +330,7 @@ export default function WithdrawView({ user, onStatusChange }) {
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '10px',
+                          justifyContent: 'space-between',
                           padding: '8px 10px',
                           background: selectedCountry?.code === c.code ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
                           border: 'none',
@@ -312,8 +342,15 @@ export default function WithdrawView({ user, onStatusChange }) {
                           textAlign: 'left'
                         }}
                       >
-                        <span style={{ fontSize: '16px' }}>{c.flag}</span>
-                        <span>{c.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '16px' }}>{c.flag}</span>
+                          <span>{c.name}</span>
+                        </div>
+                        {COUNTRY_PAYMENT_CONFIG[c.code] && (
+                          <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                            Local + Crypto
+                          </span>
+                        )}
                       </button>
                     ))
                   )}
@@ -322,203 +359,226 @@ export default function WithdrawView({ user, onStatusChange }) {
             )}
           </div>
 
-          {/* Conditional 1: Ethiopia Methods */}
-          {selectedCountry?.code === 'ET' && (
+          {/* If country selected, show Payment Category Tabs (Local Fiat vs Crypto) */}
+          {selectedCountry && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(15, 23, 42, 0.5)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                  {t('withdraw.provider')} (Ethiopia) *
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEthMethod('telebirr');
-                      setErrorMsg(null);
-                    }}
-                    style={{
-                      padding: '12px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      border: ethMethod === 'telebirr' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-                      background: ethMethod === 'telebirr' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(15, 23, 42, 0.6)',
-                      color: ethMethod === 'telebirr' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Smartphone size={16} color="var(--accent-cyan)" /> Telebirr
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEthMethod('cbe');
-                      setErrorMsg(null);
-                    }}
-                    style={{
-                      padding: '12px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      border: ethMethod === 'cbe' ? '2px solid var(--accent-purple)' : '1px solid var(--border-color)',
-                      background: ethMethod === 'cbe' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(15, 23, 42, 0.6)',
-                      color: ethMethod === 'cbe' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Building size={16} color="var(--accent-purple)" /> CBE Bank
-                  </button>
-                </div>
-              </div>
-
-              {ethMethod && (
-                <>
-                  <div>
-                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                      {ethMethod === 'telebirr' ? 'Telebirr Phone Number' : 'CBE Account Number'} *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={ethMethod === 'telebirr' ? '09XXXXXXXX or 07XXXXXXXX' : '1000XXXXXXXXX'}
-                      className="form-input"
-                      value={ethAccount}
-                      onChange={(e) => setEthAccount(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                      {t('withdraw.fullName')} *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Abebe Bikila"
-                      className="form-input"
-                      value={ethFullName}
-                      onChange={(e) => setEthFullName(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Conditional 2: All Other Countries -> Crypto with TON vs USDT Toggle */}
-          {selectedCountry && selectedCountry.code !== 'ET' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(15, 23, 42, 0.5)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-              {/* Crypto Asset Switcher: TON vs USDT */}
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                  Choose Payout Asset *
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setCryptoType('TON')}
-                    style={{
-                      padding: '12px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      border: cryptoType === 'TON' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
-                      background: cryptoType === 'TON' ? 'rgba(59, 130, 246, 0.25)' : 'rgba(15, 23, 42, 0.6)',
-                      color: cryptoType === 'TON' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    💎 TON (The Open Network)
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCryptoType('USDT')}
-                    style={{
-                      padding: '12px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      border: cryptoType === 'USDT' ? '2px solid var(--accent-emerald)' : '1px solid var(--border-color)',
-                      background: cryptoType === 'USDT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(15, 23, 42, 0.6)',
-                      color: cryptoType === 'USDT' ? '#fff' : 'var(--text-secondary)',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    💵 USDT (Tether USD)
-                  </button>
-                </div>
-              </div>
-
-              {/* USDT Network selector (if USDT selected) */}
-              {cryptoType === 'USDT' && (
+              
+              {/* Category Switcher: Local vs Crypto */}
+              {hasLocalMethods && (
                 <div>
-                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
-                    Select USDT Network:
+                  <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                    Choose Payout Method:
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                    {['TON', 'TRC20', 'BEP20'].map((net) => (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPayoutMode('local')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: 'var(--radius-md)',
+                        border: payoutMode === 'local' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                        background: payoutMode === 'local' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                        color: payoutMode === 'local' ? '#fff' : 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Smartphone size={14} color="var(--accent-cyan)" /> Local ({countryConfig.currency.split(' ')[0]})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPayoutMode('crypto')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: 'var(--radius-md)',
+                        border: payoutMode === 'crypto' ? '2px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                        background: payoutMode === 'crypto' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                        color: payoutMode === 'crypto' ? '#fff' : 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Globe size={14} color="var(--accent-emerald)" /> Crypto (TON / USDT)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* MODE 1: Local Country E-Wallets / Banks */}
+              {payoutMode === 'local' && hasLocalMethods && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                      Select Provider ({selectedCountry.name}) *
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${countryConfig.methods.length}, 1fr)`, gap: '8px' }}>
+                      {countryConfig.methods.map((method) => (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => {
+                            setLocalMethodId(method.id);
+                            setErrorMsg(null);
+                          }}
+                          style={{
+                            padding: '10px',
+                            borderRadius: 'var(--radius-md)',
+                            border: localMethodId === method.id ? `2px solid ${method.color || 'var(--accent-cyan)'}` : '1px solid var(--border-color)',
+                            background: localMethodId === method.id ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.6)',
+                            color: localMethodId === method.id ? '#fff' : 'var(--text-secondary)',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <span>{method.icon}</span>
+                          <span>{method.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dynamic Fields for Selected Local Method */}
+                  {currentLocalMethod?.fields.map((field) => (
+                    <div key={field.name}>
+                      <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                        {field.label} *
+                      </label>
+                      <input
+                        type={field.type || 'text'}
+                        required={field.required}
+                        placeholder={field.placeholder}
+                        className="form-input"
+                        value={localFormData[field.name] || ''}
+                        onChange={(e) => handleLocalFieldChange(field.name, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* MODE 2: Crypto (TON vs USDT with Multi-Network) */}
+              {(payoutMode === 'crypto' || !hasLocalMethods) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Crypto Asset Switcher: TON vs USDT */}
+                  <div>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                      Choose Crypto Asset *
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <button
-                        key={net}
                         type="button"
-                        onClick={() => setCryptoNetwork(net)}
+                        onClick={() => setCryptoType('TON')}
                         style={{
-                          padding: '6px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: cryptoNetwork === net ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
-                          background: cryptoNetwork === net ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)',
-                          color: cryptoNetwork === net ? 'var(--accent-emerald)' : 'var(--text-secondary)',
-                          fontSize: '11px',
+                          padding: '12px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          border: cryptoType === 'TON' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                          background: cryptoType === 'TON' ? 'rgba(59, 130, 246, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                          color: cryptoType === 'TON' ? '#fff' : 'var(--text-secondary)',
+                          fontSize: '13px',
                           fontWeight: '700',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
                         }}
                       >
-                        {net}
+                        💎 TON (The Open Network)
                       </button>
-                    ))}
+
+                      <button
+                        type="button"
+                        onClick={() => setCryptoType('USDT')}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          border: cryptoType === 'USDT' ? '2px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                          background: cryptoType === 'USDT' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                          color: cryptoType === 'USDT' ? '#fff' : 'var(--text-secondary)',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        💵 USDT (Tether USD)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* USDT Network selector (if USDT selected) */}
+                  {cryptoType === 'USDT' && (
+                    <div>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                        Select USDT Network:
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                        {['TON', 'TRC20', 'BEP20'].map((net) => (
+                          <button
+                            key={net}
+                            type="button"
+                            onClick={() => setCryptoNetwork(net)}
+                            style={{
+                              padding: '6px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: cryptoNetwork === net ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                              background: cryptoNetwork === net ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                              color: cryptoNetwork === net ? 'var(--accent-emerald)' : 'var(--text-secondary)',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {net}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Crypto Address Input */}
+                  <div>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                      {cryptoType === 'TON' ? 'TON Wallet Address' : `USDT (${cryptoNetwork}) Payout Address`} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={
+                        cryptoType === 'TON'
+                          ? 'EQ... or UQ... (Telegram @wallet / Tonkeeper)'
+                          : cryptoNetwork === 'TRC20'
+                          ? 'T... (TRON Network USDT address)'
+                          : cryptoNetwork === 'TON'
+                          ? 'EQ... (TON Network USDT address)'
+                          : '0x... (BEP20 USDT address)'
+                      }
+                      className="form-input"
+                      value={cryptoAddress}
+                      onChange={(e) => setCryptoAddress(e.target.value)}
+                    />
                   </div>
                 </div>
               )}
-
-              {/* Crypto Address Input */}
-              <div>
-                <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                  {cryptoType === 'TON' ? 'TON Wallet Address' : `USDT (${cryptoNetwork}) Payout Address`} *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={
-                    cryptoType === 'TON'
-                      ? 'EQ... or UQ... (Telegram @wallet / Tonkeeper)'
-                      : cryptoNetwork === 'TRC20'
-                      ? 'T... (TRON Network USDT address)'
-                      : cryptoNetwork === 'TON'
-                      ? 'EQ... (TON Network USDT address)'
-                      : '0x... (BEP20 USDT address)'
-                  }
-                  className="form-input"
-                  value={cryptoAddress}
-                  onChange={(e) => setCryptoAddress(e.target.value)}
-                />
-              </div>
             </div>
           )}
 
