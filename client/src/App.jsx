@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ShieldCheck, UserCheck, AlertCircle, Sparkles } from 'lucide-react';
+import Navbar from './components/Navbar';
+import DashboardView from './views/DashboardView';
+import TasksView from './views/TasksView';
+import ReferralView from './views/ReferralView';
+import WithdrawView from './views/WithdrawView';
+import LeaderboardView from './views/LeaderboardView';
+import AdminView from './views/AdminView';
+import { Sparkles, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
-  const { user, loading, isTelegramEnvironment } = useAuth();
+  const { user, setUser, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   if (loading) {
     return (
@@ -18,81 +26,97 @@ function AppContent() {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 12px'
           }} />
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Authenticating with Telegram...</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading EarnCashIO...</p>
         </div>
       </div>
     );
   }
 
+  // Interactive handler for ad completion
+  const handleAdCompleted = (slotNum) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const newAdsToday = (prev.adsWatchedToday || 0) + 1;
+      const newAdsTotal = (prev.adsWatchedTotal || 0) + 1;
+      const newBalance = (prev.balance || 0) + 0.005;
+      const newTotalEarned = (prev.totalEarned || 0) + 0.005;
+      return {
+        ...prev,
+        adsWatchedToday: newAdsToday,
+        adsWatchedTotal: newAdsTotal,
+        balance: parseFloat(newBalance.toFixed(4)),
+        totalEarned: parseFloat(newTotalEarned.toFixed(4)),
+        eligibility: {
+          ...prev.eligibility,
+          adsWatched: newAdsTotal,
+          isEligible: newAdsTotal >= 20 && (prev.referralCount || 0) >= 10
+        }
+      };
+    });
+  };
+
+  // Interactive handler for withdrawal status flip
+  const handleWithdrawalStatusChange = (newStatus) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        withdrawalStatus: newStatus
+      };
+    });
+  };
+
   return (
     <div className="app-container">
-      {/* Header */}
-      <header style={{ padding: '24px 16px 12px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '10px' }}>
-          <Sparkles size={14} color="var(--accent-cyan)" />
-          <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
-            EarnCashIO • TMA
-          </span>
+      {/* Top Header */}
+      <header style={{ padding: '16px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', background: 'rgba(10, 14, 23, 0.8)', backdropFilter: 'blur(10px)', position: 'sticky', top: 0, zIndex: 90 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '13px', color: '#fff' }}>
+            ⚡
+          </div>
+          <div>
+            <h1 style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '-0.02em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              EarnCashIO
+            </h1>
+          </div>
         </div>
-        <h1 style={{ fontSize: '26px', fontWeight: '800', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>
-          EarnCashIO
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
-          Watch Ads • Refer Friends • Earn Rewards
-        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {user?.isAdmin && (
+            <button
+              onClick={() => setActiveTab(activeTab === 'admin' ? 'dashboard' : 'admin')}
+              style={{
+                background: activeTab === 'admin' ? 'var(--accent-rose)' : 'rgba(244, 63, 94, 0.15)',
+                border: '1px solid rgba(244, 63, 94, 0.3)',
+                color: activeTab === 'admin' ? '#fff' : 'var(--accent-rose)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              ADMIN
+            </button>
+          )}
+          <div className="badge badge-blue">
+            ${user?.balance?.toFixed(2) || '0.00'}
+          </div>
+        </div>
       </header>
 
-      {/* Main Content */}
-      <main style={{ padding: '12px 16px 80px', flex: 1 }}>
-        {/* Auth Status Card */}
-        <div className="glass-card" style={{ marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UserCheck size={20} color="var(--accent-emerald)" />
-              </div>
-              <div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', fontWeight: '600' }}>Authenticated User</p>
-                <h3 style={{ fontSize: '16px', fontWeight: '700' }}>
-                  {user?.firstName} {user?.lastName} {user?.username ? `(@${user.username})` : ''}
-                </h3>
-              </div>
-            </div>
-            {user?.isAdmin && (
-              <span style={{ padding: '4px 8px', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--accent-amber)', fontSize: '11px', fontWeight: '700', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
-                ADMIN
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Telegram ID</span>
-              <p style={{ fontSize: '13px', fontWeight: '600', fontFamily: 'monospace' }}>{user?.telegramId}</p>
-            </div>
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Security Check</span>
-              <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={14} /> HMAC Verified
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Milestone Indicator */}
-        <div className="glass-card" style={{ background: 'rgba(30, 41, 67, 0.4)', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 10px var(--accent-emerald)' }} />
-            <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
-              Module 2 — Telegram Auth Complete
-            </span>
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '6px' }}>
-            Signed Telegram <code style={{ color: 'var(--accent-cyan)' }}>initData</code> validation is active on the backend. Ready for database and user model.
-          </p>
-        </div>
+      {/* Main View Switcher */}
+      <main style={{ padding: '16px 16px 20px', flex: 1 }}>
+        {activeTab === 'dashboard' && <DashboardView user={user} setActiveTab={setActiveTab} />}
+        {activeTab === 'tasks' && <TasksView user={user} onAdCompleted={handleAdCompleted} />}
+        {activeTab === 'refer' && <ReferralView user={user} />}
+        {activeTab === 'withdraw' && <WithdrawView user={user} onStatusChange={handleWithdrawalStatusChange} />}
+        {activeTab === 'leaderboard' && <LeaderboardView />}
+        {activeTab === 'admin' && <AdminView user={user} />}
       </main>
+
+      {/* Bottom Navigation */}
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={user?.isAdmin} />
     </div>
   );
 }
