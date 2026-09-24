@@ -55,3 +55,7 @@ export const tasksApi = {
 export const dashboardApi = {
   getStats: () => apiRequest('/dashboard/stats', { method: 'GET' })
 };
+
+export const referralApi = {
+  getSummary: () => apiRequest('/referrals/summary', { method: 'GET' })
+};

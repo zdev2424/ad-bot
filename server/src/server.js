@@ -6,6 +6,7 @@ import { initTelegramBot } from './bot/bot.js';
 import authRoutes from './routes/authRoutes.js';
 import tasksRoutes from './routes/tasksRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import referralRoutes from './routes/referralRoutes.js';
 
 dotenv.config({ path: '../.env' });
 dotenv.config(); // fallback to local .env
@@ -29,6 +30,7 @@ initTelegramBot();
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Health check endpoint (also used by keep-alive pings)
 app.get('/health', (req, res) => {

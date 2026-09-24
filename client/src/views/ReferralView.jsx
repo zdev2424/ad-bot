@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
-import { Users, Copy, Check, Share2, Gift, Sparkles, UserPlus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Copy, Check, Share2, Gift, Sparkles, UserPlus, RefreshCw } from 'lucide-react';
+import { referralApi } from '../services/api';
 
 export default function ReferralView({ user }) {
   const [copied, setCopied] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const telegramId = user?.telegramId || '999999999';
   const botUsername = 'EarnCashIOBot';
-  const refLink = `https://t.me/${botUsername}?start=ref_${telegramId}`;
-  const referralCount = user?.referralCount ?? 0;
+  const defaultRefLink = `https://t.me/${botUsername}?start=ref_${telegramId}`;
+
+  useEffect(() => {
+    async function fetchReferralSummary() {
+      try {
+        const res = await referralApi.getSummary();
+        if (res.success && res.data) {
+          setSummary(res.data);
+        }
+      } catch (err) {
+        console.warn('Could not load live referral summary:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchReferralSummary();
+  }, []);
+
+  const refLink = summary?.referralLink || defaultRefLink;
+  const referralCount = summary?.referralCount ?? user?.referralCount ?? 0;
   const referralBonusEarned = (referralCount * 0.05).toFixed(2);
+  const invitedFriends = summary?.invitedFriends || [];
 
   const handleCopy = () => {
     navigator.clipboard.writeText(refLink);
@@ -17,17 +40,14 @@ export default function ReferralView({ user }) {
   };
 
   const handleShare = () => {
-    const shareText = encodeURIComponent('🚀 Join EarnCashIO and earn real cash by watching short video ads! Fast payouts & zero KYC:');
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
-    window.open(shareUrl, '_blank');
+    if (summary?.telegramShareUrl) {
+      window.open(summary.telegramShareUrl, '_blank');
+    } else {
+      const shareText = encodeURIComponent('🚀 Join EarnCashIO and earn real cash by watching short video ads! Fast payouts & zero KYC:');
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
+      window.open(shareUrl, '_blank');
+    }
   };
-
-  // Mock list of invited friends for initial shell
-  const sampleInvitedFriends = [
-    { id: 1, name: 'Alex M.', username: '@alex_m', date: 'Yesterday', bonus: '+$0.05' },
-    { id: 2, name: 'Dawit T.', username: '@dawitt', date: '2 days ago', bonus: '+$0.05' },
-    { id: 3, name: 'Elena R.', username: '@elena_r', date: '3 days ago', bonus: '+$0.05' }
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -106,7 +126,7 @@ export default function ReferralView({ user }) {
       {/* Invited Friends List */}
       <div className="glass-card">
         <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Invited Friends ({referralCount > 0 ? referralCount : '0'})</h4>
-        {referralCount === 0 ? (
+        {invitedFriends.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '16px 8px' }}>
             <UserPlus size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px', display: 'block' }} />
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>No friends invited yet.</p>
@@ -114,11 +134,11 @@ export default function ReferralView({ user }) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {sampleInvitedFriends.map((friend) => (
+            {invitedFriends.map((friend) => (
               <div key={friend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)' }}>
                 <div>
                   <p style={{ fontSize: '13px', fontWeight: '600' }}>{friend.name}</p>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{friend.username} • {friend.date}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{friend.username} • {friend.adsWatched} ads</span>
                 </div>
                 <span className="badge badge-emerald">{friend.bonus}</span>
               </div>
