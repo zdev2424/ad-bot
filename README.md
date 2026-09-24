@@ -28,7 +28,7 @@ A Telegram Mini App (React frontend + Node.js backend) where users earn rewards 
 
 ## 🎯 Step-by-Step Module Roadmap
 
-- [ ] **Module 1 — Project Setup**: Monorepo folder setup, backend & frontend skeletons, `.env.example`, BotFather & hosting guide.
+- [x] **Module 1 — Project Setup**: Monorepo folder setup, backend & frontend skeletons, `.env.example`, BotFather & hosting guide.
 - [ ] **Module 2 — Telegram Auth**: `initData` HMAC-SHA256 backend verification middleware & user session handshake.
 - [ ] **Module 3 — Database & User Model**: PostgreSQL (Supabase/Neon) or Mongo Atlas setup; users, ad_watches, referrals, withdrawals schemas.
 - [ ] **Module 4 — Frontend Shell (5 Views + Admin)**: Dashboard, Tasks (100 slots), Refer, Withdraw, Leaderboard with Telegram theme and `WebApp.expand()`.
