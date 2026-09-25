@@ -1,5 +1,6 @@
 import db from '../db/index.js';
 import { UserModel } from '../models/userModel.js';
+import { ChannelService } from './channelService.js';
 
 const REQUIRED_ADS_WATCHED = 20;
 const REQUIRED_REFERRALS = 10;
@@ -14,7 +15,11 @@ export const WithdrawalService = {
 
     const adsWatched = user.ads_watched_count || 0;
     const referrals = user.referral_count || 0;
-    const isEligible = adsWatched >= REQUIRED_ADS_WATCHED && referrals >= REQUIRED_REFERRALS;
+    const channelData = ChannelService.getChannelsForUser(telegramId);
+
+    const isEligible = adsWatched >= REQUIRED_ADS_WATCHED && 
+                       referrals >= REQUIRED_REFERRALS && 
+                       channelData.allJoined;
 
     // Check existing withdrawal queue record
     const latestWithdrawal = db.prepare(`
@@ -34,7 +39,11 @@ export const WithdrawalService = {
         adsWatched,
         adsRequired: REQUIRED_ADS_WATCHED,
         referralsCount: referrals,
-        referralsRequired: REQUIRED_REFERRALS
+        referralsRequired: REQUIRED_REFERRALS,
+        channelsJoined: channelData.joinedCount,
+        channelsRequired: channelData.totalCount,
+        allChannelsJoined: channelData.allJoined,
+        channels: channelData.channels
       }
     };
   },
@@ -65,9 +74,16 @@ export const WithdrawalService = {
 
     const adsWatched = user.ads_watched_count || 0;
     const referrals = user.referral_count || 0;
-    const isEligible = (adsWatched >= REQUIRED_ADS_WATCHED && referrals >= REQUIRED_REFERRALS) || options.devBypass;
+    const channelData = ChannelService.getChannelsForUser(telegramId);
+
+    const isEligible = (adsWatched >= REQUIRED_ADS_WATCHED && 
+                        referrals >= REQUIRED_REFERRALS && 
+                        channelData.allJoined) || options.devBypass;
 
     if (!isEligible) {
+      if (!channelData.allJoined && !options.devBypass) {
+        throw new Error('Please join all required Telegram channels to unlock withdrawals.');
+      }
       throw new Error(`Eligibility requirement not met: Requires at least ${REQUIRED_ADS_WATCHED} ads watched and ${REQUIRED_REFERRALS} friend referrals.`);
     }
 

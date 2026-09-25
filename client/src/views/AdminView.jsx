@@ -1,44 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Users, Tv, DollarSign, Check, X, Clock, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Users, Tv, DollarSign, Check, X, Clock, RefreshCw, AlertTriangle, CheckCircle2, Radio, Plus, Trash2, Globe } from 'lucide-react';
 import { adminApi } from '../services/api';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function AdminView({ user }) {
   const [overview, setOverview] = useState(null);
   const [queue, setQueue] = useState([]);
+  const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [notification, setNotification] = useState(null);
 
+  // New Channel Form State
+  const [showAddChannel, setShowAddChannel] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelUsername, setNewChannelUsername] = useState('');
+  const [newChannelType, setNewChannelType] = useState('sponsor'); // 'official' | 'sponsor'
+
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [overviewRes, queueRes] = await Promise.all([
-        adminApi.getOverview(),
-        adminApi.getWithdrawals()
+      const [overviewRes, queueRes, channelsRes] = await Promise.all([
+        adminApi.getOverview().catch(() => null),
+        adminApi.getWithdrawals().catch(() => null),
+        adminApi.getChannels().catch(() => null)
       ]);
 
-      if (overviewRes.success && overviewRes.data) {
+      if (overviewRes?.success && overviewRes?.data) {
         setOverview(overviewRes.data);
       }
-      if (queueRes.success && queueRes.data) {
+      if (queueRes?.success && queueRes?.data) {
         setQueue(queueRes.data);
+      }
+      if (channelsRes?.success && channelsRes?.data) {
+        setChannels(channelsRes.data);
       }
     } catch (err) {
       console.warn('Admin fetch warning:', err.message);
-      // Fallback seed data for dev view
-      setOverview({
-        totalUsers: 1,
-        totalAdsServed: 4,
-        totalReferrals: 0,
-        pendingWithdrawalsCount: 1,
-        estimatedGrossRevenue: 0.15,
-        totalPaidOut: 0.00,
-        systemStatus: 'Operational',
-        adNetwork: 'Adsgram (Connected)'
-      });
-      setQueue([
-        { id: 101, telegramId: '98412499', username: '@alex_m', adsWatched: 24, refs: 12, amount: '$5.00', status: 'pending', requestedAt: '10 mins ago' }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -48,27 +46,102 @@ export default function AdminView({ user }) {
     fetchAdminData();
   }, []);
 
-  const handleAction = async (id, newStatus) => {
+  const handleAction = async (id, action) => {
+    triggerHaptic('medium');
     setActionLoading(id);
     setNotification(null);
     try {
-      const res = await adminApi.updateWithdrawal(id, newStatus);
+      const res = await adminApi.updateWithdrawal(id, action);
       if (res.success) {
+        triggerHaptic('success');
         setQueue((prev) =>
-          prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+          prev.map((item) => (item.id === id ? { ...item, status: action } : item))
         );
         setNotification({
           type: 'success',
-          text: `Withdrawal #${id} marked as ${newStatus} successfully.`
+          text: `Withdrawal #${id} marked as ${action} successfully.`
         });
       }
     } catch (err) {
+      triggerHaptic('error');
       setNotification({
         type: 'error',
         text: err.message || `Failed to update withdrawal #${id}`
       });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleAddChannel = async (e) => {
+    e.preventDefault();
+    if (!newChannelName || !newChannelUsername) return;
+
+    triggerHaptic('medium');
+    try {
+      const res = await adminApi.addChannel({
+        name: newChannelName,
+        username: newChannelUsername,
+        type: newChannelType,
+        is_active: 1
+      });
+
+      if (res.success && res.data) {
+        triggerHaptic('success');
+        setChannels((prev) => [...prev, res.data]);
+        setNewChannelName('');
+        setNewChannelUsername('');
+        setShowAddChannel(false);
+        setNotification({
+          type: 'success',
+          text: `Added channel "${res.data.name}" to withdrawal requirements!`
+        });
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setNotification({
+        type: 'error',
+        text: err.message || 'Failed to add channel'
+      });
+    }
+  };
+
+  const handleDeleteChannel = async (id, name) => {
+    triggerHaptic('warning');
+    try {
+      const res = await adminApi.deleteChannel(id);
+      if (res.success) {
+        triggerHaptic('success');
+        setChannels((prev) => prev.filter((c) => c.id !== id));
+        setNotification({
+          type: 'success',
+          text: `Removed channel "${name}" from requirements.`
+        });
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setNotification({
+        type: 'error',
+        text: err.message || 'Failed to remove channel'
+      });
+    }
+  };
+
+  const handleToggleChannel = async (id, currentActive) => {
+    triggerHaptic('light');
+    const newActive = !currentActive;
+    try {
+      const res = await adminApi.toggleChannel(id, newActive);
+      if (res.success) {
+        setChannels((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, is_active: newActive ? 1 : 0 } : c))
+        );
+      }
+    } catch (err) {
+      setNotification({
+        type: 'error',
+        text: err.message || 'Failed to toggle channel status'
+      });
     }
   };
 
@@ -235,6 +308,180 @@ export default function AdminView({ user }) {
           </div>
         )}
       </div>
+
+      {/* Telegram Channel & Sponsor Management (Engine 3) */}
+      <div className="glass-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div>
+            <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Radio size={16} color="var(--accent-cyan)" />
+              Telegram & Sponsor Channels
+            </h4>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              Mandatory channels users must join to unlock withdrawals
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddChannel(!showAddChannel)}
+            style={{
+              background: showAddChannel ? 'rgba(244, 63, 94, 0.15)' : 'rgba(37, 99, 235, 0.2)',
+              border: showAddChannel ? '1px solid var(--accent-rose)' : '1px solid var(--accent-blue)',
+              color: showAddChannel ? 'var(--accent-rose)' : 'var(--accent-cyan)',
+              padding: '6px 10px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '11px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            {showAddChannel ? <X size={12} /> : <Plus size={12} />}
+            {showAddChannel ? 'Cancel' : 'Add Channel'}
+          </button>
+        </div>
+
+        {/* Add Channel Inline Form */}
+        {showAddChannel && (
+          <form onSubmit={handleAddChannel} style={{ padding: '12px', background: 'rgba(10, 15, 26, 0.85)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-cyan)' }}>
+              ➕ Add Telegram Channel or Paid Sponsor
+            </span>
+
+            <div>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                Channel / Sponsor Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. EarnCashIO VIP Announcements"
+                className="form-input"
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                style={{ minHeight: '38px', fontSize: '13px' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                Telegram Username or Link *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="@EarnCashIO_Official or t.me/EarnCashIO_Official"
+                className="form-input"
+                value={newChannelUsername}
+                onChange={(e) => setNewChannelUsername(e.target.value)}
+                style={{ minHeight: '38px', fontSize: '13px' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                  Channel Type:
+                </label>
+                <select
+                  className="form-select"
+                  value={newChannelType}
+                  onChange={(e) => setNewChannelType(e.target.value)}
+                  style={{ minHeight: '38px', fontSize: '12px' }}
+                >
+                  <option value="official">Official Channel</option>
+                  <option value="sponsor">Paid Sponsor ($)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{ minHeight: '38px', padding: '8px', fontSize: '12px' }}
+                >
+                  Save Channel
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* Channels List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {channels.length === 0 ? (
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px' }}>
+              No channels configured. Tap "Add Channel" above.
+            </p>
+          ) : (
+            channels.map((ch) => (
+              <div
+                key={ch.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderRadius: 'var(--radius-md)',
+                  border: ch.is_active ? '1px solid var(--border-color)' : '1px solid rgba(244, 63, 94, 0.3)',
+                  opacity: ch.is_active ? 1 : 0.6
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      {ch.name}
+                    </span>
+                    <span style={{ fontSize: '9px', fontWeight: '700', padding: '1px 5px', borderRadius: '3px', background: ch.type === 'sponsor' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)', color: ch.type === 'sponsor' ? 'var(--accent-amber)' : 'var(--accent-cyan)' }}>
+                      {ch.type === 'sponsor' ? 'SPONSOR' : 'OFFICIAL'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ch.username}</span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => handleToggleChannel(ch.id, Boolean(ch.is_active))}
+                    style={{
+                      padding: '5px 8px',
+                      background: ch.is_active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      border: ch.is_active ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                      color: ch.is_active ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {ch.is_active ? 'Active' : 'Disabled'}
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteChannel(ch.id, ch.name)}
+                    style={{
+                      padding: '5px 8px',
+                      background: 'rgba(244, 63, 94, 0.12)',
+                      border: '1px solid rgba(244, 63, 94, 0.3)',
+                      color: 'var(--accent-rose)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+

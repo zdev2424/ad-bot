@@ -1,5 +1,6 @@
 import { Bot, InlineKeyboard } from 'grammy';
 import { UserModel } from '../models/userModel.js';
+import { setBotInstance } from '../services/channelService.js';
 
 let bot = null;
 
@@ -13,6 +14,7 @@ export function initTelegramBot() {
 
   try {
     bot = new Bot(token);
+    setBotInstance(bot);
 
     // Handle /start command with optional referral parameter
     bot.command('start', async (ctx) => {

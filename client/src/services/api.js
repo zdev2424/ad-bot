@@ -62,6 +62,12 @@ export const referralApi = {
 
 export const withdrawalApi = {
   getStatus: () => apiRequest('/withdrawals/status', { method: 'GET' }),
+  getChannels: () => apiRequest('/withdrawals/channels', { method: 'GET' }),
+  verifyChannel: (channelId) =>
+    apiRequest('/withdrawals/verify-channel', {
+      method: 'POST',
+      body: JSON.stringify({ channelId })
+    }),
   request: (options = {}) =>
     apiRequest('/withdrawals/request', {
       method: 'POST',
@@ -80,5 +86,19 @@ export const adminApi = {
     apiRequest(`/admin/withdrawals/${id}/action`, {
       method: 'POST',
       body: JSON.stringify({ action })
+    }),
+  getChannels: () => apiRequest('/admin/channels', { method: 'GET' }),
+  addChannel: (channelData) =>
+    apiRequest('/admin/channels', {
+      method: 'POST',
+      body: JSON.stringify(channelData)
+    }),
+  deleteChannel: (id) =>
+    apiRequest(`/admin/channels/${id}`, { method: 'DELETE' }),
+  toggleChannel: (id, is_active) =>
+    apiRequest(`/admin/channels/${id}/toggle`, {
+      method: 'POST',
+      body: JSON.stringify({ is_active })
     })
 };
+

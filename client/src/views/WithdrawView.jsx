@@ -30,21 +30,38 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
   const [liveStatus, setLiveStatus] = useState(user?.withdrawalStatus || 'none');
   const [showQueueModal, setShowQueueModal] = useState(false);
 
+  // Required Telegram Channels state
+  const [channelsData, setChannelsData] = useState({
+    channels: [],
+    allJoined: false,
+    joinedCount: 0,
+    totalCount: 0
+  });
+  const [verifyingChannelId, setVerifyingChannelId] = useState(null);
+
   const countryDropdownRef = useRef(null);
   const estimatedWaitTime = '2 days (approx. 48 hours)';
 
-  useEffect(() => {
-    async function fetchStatus() {
-      try {
-        const res = await withdrawalApi.getStatus();
-        if (res.success && res.data) {
-          setLiveStatus(res.data.status);
-        }
-      } catch (err) {
-        console.warn('Could not fetch live withdrawal status:', err.message);
+  const fetchStatusAndChannels = async () => {
+    try {
+      const [statusRes, channelsRes] = await Promise.all([
+        withdrawalApi.getStatus().catch(() => null),
+        withdrawalApi.getChannels().catch(() => null)
+      ]);
+
+      if (statusRes?.success && statusRes?.data) {
+        setLiveStatus(statusRes.data.status);
       }
+      if (channelsRes?.success && channelsRes?.data) {
+        setChannelsData(channelsRes.data);
+      }
+    } catch (err) {
+      console.warn('Could not fetch withdrawal status/channels:', err.message);
     }
-    fetchStatus();
+  };
+
+  useEffect(() => {
+    fetchStatusAndChannels();
   }, []);
 
   // Close country dropdown on click outside
@@ -64,7 +81,8 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
 
   const isAdsEligible = adsWatched >= 20 || devBypass;
   const isRefEligible = referralCount >= 10 || devBypass;
-  const isFullyEligible = isAdsEligible && isRefEligible;
+  const isChannelsEligible = channelsData.allJoined || channelsData.totalCount === 0 || devBypass;
+  const isFullyEligible = isAdsEligible && isRefEligible && isChannelsEligible;
 
   // Current country config if available
   const countryConfig = selectedCountry ? COUNTRY_PAYMENT_CONFIG[selectedCountry.code] : null;
@@ -75,6 +93,45 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleOpenTelegramChannel = (url) => {
+    triggerHaptic('light');
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleVerifyChannel = async (channelId) => {
+    triggerHaptic('medium');
+    setVerifyingChannelId(channelId);
+    setErrorMsg(null);
+    try {
+      const res = await withdrawalApi.verifyChannel(channelId);
+      if (res.success && res.isJoined) {
+        triggerHaptic('success');
+        setChannelsData((prev) => {
+          const updated = prev.channels.map((c) => (c.id === channelId ? { ...c, isJoined: true } : c));
+          const count = updated.filter((c) => c.isJoined).length;
+          return {
+            ...prev,
+            channels: updated,
+            joinedCount: count,
+            allJoined: count === updated.length
+          };
+        });
+      } else {
+        triggerHaptic('warning');
+        setErrorMsg(res.message || 'Please join the channel on Telegram first.');
+      }
+    } catch (err) {
+      triggerHaptic('error');
+      setErrorMsg(err.message || 'Could not verify channel membership.');
+    } finally {
+      setVerifyingChannelId(null);
+    }
+  };
 
   const handleSelectCountry = (country) => {
     triggerHaptic('selection');
@@ -119,7 +176,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
 
     if (!isFullyEligible) {
       triggerHaptic('warning');
-      setErrorMsg('Please complete 20 ad watches and 10 friend referrals to unlock withdrawals.');
+      setErrorMsg('Please complete all 3 withdrawal requirements: 20 ads, 10 friends, and join Telegram channels.');
       return;
     }
 
@@ -205,10 +262,10 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
           </span>
         </div>
 
-        {/* Ad watches progress */}
+        {/* 1. Ad watches progress */}
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step1')}</span>
+            <span style={{ color: 'var(--text-secondary)' }}>1. {t('withdraw.step1')}</span>
             <span className="tabular-nums" style={{ fontWeight: '700', color: isAdsEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {adsWatched} / 20 {isAdsEligible && '✓'}
             </span>
@@ -218,10 +275,10 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
           </div>
         </div>
 
-        {/* Referrals progress */}
-        <div style={{ marginBottom: '4px' }}>
+        {/* 2. Referrals progress */}
+        <div style={{ marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step2')}</span>
+            <span style={{ color: 'var(--text-secondary)' }}>2. {t('withdraw.step2')}</span>
             <span className="tabular-nums" style={{ fontWeight: '700', color: isRefEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {referralCount} / 10 {isRefEligible && '✓'}
             </span>
@@ -230,6 +287,99 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
             <div className="progress-bar-fill" style={{ width: `${Math.min(100, (referralCount / 10) * 100)}%`, background: isRefEligible ? 'var(--accent-emerald)' : 'var(--accent-blue)' }} />
           </div>
         </div>
+
+        {/* 3. Telegram Channels & Sponsors Requirement */}
+        {channelsData.channels && channelsData.channels.length > 0 && (
+          <div style={{ paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                3. Join Telegram Channels
+              </span>
+              <span className="tabular-nums" style={{ fontSize: '12px', fontWeight: '700', color: isChannelsEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
+                {channelsData.joinedCount} / {channelsData.totalCount} {isChannelsEligible && '✓'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {channelsData.channels.map((channel) => (
+                <div
+                  key={channel.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    background: 'rgba(10, 15, 26, 0.7)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: channel.isJoined ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border-color)'
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1, marginRight: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {channel.name}
+                      </span>
+                      {channel.type === 'sponsor' && (
+                        <span style={{ fontSize: '9px', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>
+                          SPONSOR
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{channel.username}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTelegramChannel(channel.url)}
+                      style={{
+                        padding: '5px 9px',
+                        background: 'rgba(59, 130, 246, 0.15)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        color: 'var(--accent-cyan)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Join
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={channel.isJoined || verifyingChannelId === channel.id}
+                      onClick={() => handleVerifyChannel(channel.id)}
+                      style={{
+                        padding: '5px 9px',
+                        background: channel.isJoined ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                        border: channel.isJoined ? '1px solid var(--accent-emerald)' : '1px solid var(--border-color)',
+                        color: channel.isJoined ? 'var(--accent-emerald)' : '#fff',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: channel.isJoined ? 'default' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                    >
+                      {verifyingChannelId === channel.id ? (
+                        <div style={{ width: '10px', height: '10px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      ) : channel.isJoined ? (
+                        <>
+                          <CheckCircle2 size={12} /> Joined
+                        </>
+                      ) : (
+                        'Verify'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Payout Method Form */}
