@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, Tv, Users, Wallet, ArrowUpRight, CheckCircle2, TrendingUp, RefreshCw, Zap } from 'lucide-react';
+import { Sparkles, Tv, Users, Wallet, ArrowUpRight, CheckCircle2, TrendingUp, RefreshCw, Zap, ShieldCheck } from 'lucide-react';
 import { dashboardApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
   const { t } = useLanguage();
@@ -9,6 +10,7 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchLiveStats = async () => {
+    triggerHaptic('light');
     setRefreshing(true);
     try {
       const res = await dashboardApi.getStats();
@@ -33,13 +35,18 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
   const maxDailyAds = stats?.maxDailyAds ?? 100;
   const progressPercent = Math.min(100, Math.round((adsWatchedToday / maxDailyAds) * 100));
 
+  const handleCardNav = (tab) => {
+    triggerHaptic('light');
+    setActiveTab(tab);
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* User Welcome & Refresh Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 2px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px' }}>
         <div>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>{t('dashboard.welcome')}</span>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('dashboard.welcome')}</span>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
             {user?.firstName || 'EarnCashIO Earner'} 👋
           </h2>
         </div>
@@ -47,17 +54,18 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
           onClick={fetchLiveStats}
           disabled={refreshing}
           style={{
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.25)',
+            background: 'rgba(59, 130, 246, 0.12)',
+            border: '1px solid rgba(59, 130, 246, 0.28)',
             color: 'var(--accent-cyan)',
-            padding: '6px 10px',
+            padding: '7px 12px',
             borderRadius: 'var(--radius-md)',
             fontSize: '11px',
-            fontWeight: '600',
+            fontWeight: '700',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px'
+            gap: '5px',
+            touchAction: 'manipulation'
           }}
         >
           <RefreshCw size={12} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
@@ -65,44 +73,46 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
         </button>
       </div>
 
-      {/* Main Balance Card */}
+      {/* Main Balance Hero Card with Radiant Glow */}
       <div
         className="glass-card"
         style={{
-          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
+          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.45) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          border: '1px solid rgba(59, 130, 246, 0.35)',
+          borderTop: '1px solid rgba(96, 165, 250, 0.45)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)'
         }}
       >
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '120px', height: '120px', background: 'rgba(59, 130, 246, 0.15)', borderRadius: '50%', filter: 'blur(30px)' }} />
+        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '130px', height: '130px', background: 'rgba(6, 182, 212, 0.22)', borderRadius: '50%', filter: 'blur(35px)', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
             {t('dashboard.currentBalance')}
           </span>
-          <span style={{ fontSize: '11px', padding: '2px 8px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-full)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Zap size={10} /> {t('dashboard.usdEquivalent')}
+          <span style={{ fontSize: '11px', padding: '3px 9px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-full)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
+            <Zap size={11} /> {t('dashboard.usdEquivalent')}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '14px' }}>
-          <span style={{ fontSize: '38px', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span className="tabular-nums" style={{ fontSize: '40px', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             ${balance.toFixed(3)}
           </span>
-          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>USD</span>
+          <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)' }}>USD</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dashboard.totalEarned')}</span>
-            <p style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent-emerald)' }}>
+            <p className="tabular-nums" style={{ fontSize: '15px', fontWeight: '800', color: 'var(--accent-emerald)', marginTop: '2px' }}>
               ${totalEarned.toFixed(3)}
             </p>
           </div>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dashboard.withdrawalStatus')}</span>
-            <p style={{ fontSize: '13px', fontWeight: '600', textTransform: 'capitalize', color: (stats?.withdrawalStatus || user?.withdrawalStatus) === 'pending' || (stats?.withdrawalStatus || user?.withdrawalStatus) === 'in_queue' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            <p style={{ fontSize: '13px', fontWeight: '700', textTransform: 'capitalize', marginTop: '2px', color: (stats?.withdrawalStatus || user?.withdrawalStatus) === 'pending' || (stats?.withdrawalStatus || user?.withdrawalStatus) === 'in_queue' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
               {(stats?.withdrawalStatus || user?.withdrawalStatus) === 'none' ? 'Ready' : (stats?.withdrawalStatus || user?.withdrawalStatus || 'Ready')}
             </p>
           </div>
@@ -116,7 +126,7 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
             <Tv size={18} color="var(--accent-blue)" />
             <h4 style={{ fontSize: '14px', fontWeight: '700' }}>{t('dashboard.dailySlots')}</h4>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-blue)' }}>
+          <span className="tabular-nums" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-blue)' }}>
             {adsWatchedToday} / {maxDailyAds}
           </span>
         </div>
@@ -130,32 +140,32 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
             {t('dashboard.adRate')}
           </span>
           <button
-            onClick={() => setActiveTab('tasks')}
-            style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
+            onClick={() => handleCardNav('tasks')}
+            style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px', touchAction: 'manipulation' }}
           >
             {t('dashboard.watchNow')} <ArrowUpRight size={14} />
           </button>
         </div>
       </div>
 
-      {/* Quick Stats Grid */}
+      {/* Quick Stats Grid with Tactile Haptics */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div className="glass-card glass-card-interactive" onClick={() => setActiveTab('refer')}>
+        <div className="glass-card glass-card-interactive" onClick={() => handleCardNav('refer')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <Users size={18} color="var(--accent-purple)" />
             <span className="badge badge-blue">{t('dashboard.refRate')}</span>
           </div>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dashboard.friendsInvited')}</span>
-          <p style={{ fontSize: '20px', fontWeight: '800', marginTop: '2px' }}>{referralCount}</p>
+          <p className="tabular-nums" style={{ fontSize: '20px', fontWeight: '800', marginTop: '2px' }}>{referralCount}</p>
         </div>
 
-        <div className="glass-card glass-card-interactive" onClick={() => setActiveTab('withdraw')}>
+        <div className="glass-card glass-card-interactive" onClick={() => handleCardNav('withdraw')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <Wallet size={18} color="var(--accent-emerald)" />
-            <span className="badge badge-emerald">Instant Gate</span>
+            <span className="badge badge-emerald">Gate</span>
           </div>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dashboard.withdrawGate')}</span>
-          <p style={{ fontSize: '14px', fontWeight: '700', marginTop: '4px', color: (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
+          <p className="tabular-nums" style={{ fontSize: '14px', fontWeight: '800', marginTop: '4px', color: (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
             {(stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? t('dashboard.unlocked') : `${adsWatchedToday}/20 Ads`}
           </p>
         </div>
@@ -163,21 +173,27 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
 
       {/* Platform Live Highlight */}
       {stats?.global && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.55)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div style={{ textAlign: 'center' }}>
             <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('dashboard.adsServed')}</span>
-            <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{stats.global.totalAdsServed}+</p>
+            <p className="tabular-nums" style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stats.global.totalAdsServed}+</p>
           </div>
           <div style={{ width: '1px', height: '20px', background: 'var(--border-color)' }} />
           <div style={{ textAlign: 'center' }}>
             <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('dashboard.earnersOnline')}</span>
-            <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-emerald)' }}>{stats.global.totalActiveUsers || 1}</p>
+            <p className="tabular-nums" style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{stats.global.totalActiveUsers || 1}</p>
           </div>
         </div>
       )}
 
-      {/* Primary Action Button */}
-      <button className="btn-primary" onClick={() => setActiveTab('tasks')}>
+      {/* Primary Action Button (Thumb Zone reachable) */}
+      <button
+        className="btn-primary"
+        onClick={() => {
+          triggerHaptic('medium');
+          setActiveTab('tasks');
+        }}
+      >
         <Tv size={18} />
         {t('dashboard.ctaButton')}
       </button>
@@ -187,7 +203,10 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
         <div style={{ textAlign: 'center', marginTop: '2px', paddingBottom: '8px' }}>
           <button
             type="button"
-            onClick={onOpenTerms}
+            onClick={() => {
+              triggerHaptic('light');
+              onOpenTerms();
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -198,7 +217,8 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              opacity: 0.8
+              opacity: 0.85,
+              touchAction: 'manipulation'
             }}
           >
             📜 <span>Terms of Service & Fair Play Rules</span>

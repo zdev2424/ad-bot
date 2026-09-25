@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, Tv, Users, Wallet, Trophy, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function Navbar({ activeTab, setActiveTab, isAdmin }) {
   const { t } = useLanguage();
@@ -17,6 +18,13 @@ export default function Navbar({ activeTab, setActiveTab, isAdmin }) {
     navItems.push({ id: 'admin', label: t('nav.admin'), icon: ShieldAlert });
   }
 
+  const handleTabClick = (tabId) => {
+    if (activeTab !== tabId) {
+      triggerHaptic('selection');
+      setActiveTab(tabId);
+    }
+  };
+
   return (
     <nav className="bottom-nav">
       {navItems.map((item) => {
@@ -26,7 +34,7 @@ export default function Navbar({ activeTab, setActiveTab, isAdmin }) {
           <button
             key={item.id}
             className={`nav-item ${isActive ? 'active' : ''}`}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => handleTabClick(item.id)}
           >
             <Icon size={20} />
             <span>{item.label}</span>

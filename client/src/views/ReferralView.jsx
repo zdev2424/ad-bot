@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Copy, Check, Share2, Gift, Sparkles, UserPlus, RefreshCw } from 'lucide-react';
+import { Users, Copy, Check, Share2, Gift, Sparkles, UserPlus, RefreshCw, ArrowRight } from 'lucide-react';
 import { referralApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function ReferralView({ user }) {
   const { t } = useLanguage();
@@ -36,27 +37,30 @@ export default function ReferralView({ user }) {
   const invitedFriends = summary?.invitedFriends || [];
 
   const handleCopy = () => {
+    triggerHaptic('success');
     navigator.clipboard.writeText(refLink);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2200);
   };
 
   const handleShare = () => {
-    if (summary?.telegramShareUrl) {
-      window.open(summary.telegramShareUrl, '_blank');
+    triggerHaptic('medium');
+    const shareText = encodeURIComponent('🚀 Join EarnCashIO and earn real cash by watching short video ads! Fast payouts & zero KYC:');
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
+    
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(shareUrl);
     } else {
-      const shareText = encodeURIComponent('🚀 Join EarnCashIO and earn real cash by watching short video ads! Fast payouts & zero KYC:');
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${shareText}`;
       window.open(shareUrl, '_blank');
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Referral Header Card */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%)', borderColor: 'rgba(139, 92, 246, 0.3)' }}>
+      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%)', borderColor: 'rgba(139, 92, 246, 0.35)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Gift size={20} color="var(--accent-purple)" />
           </div>
           <div>
@@ -68,22 +72,22 @@ export default function ReferralView({ user }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('refer.invitedFriends')}</span>
-            <p style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>{referralCount}</p>
+            <p className="tabular-nums" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>{referralCount}</p>
           </div>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('refer.refEarnings')}</span>
-            <p style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-emerald)' }}>${referralBonusEarned}</p>
+            <p className="tabular-nums" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--accent-emerald)', marginTop: '2px' }}>${referralBonusEarned}</p>
           </div>
         </div>
       </div>
 
-      {/* Referral Link & Actions */}
+      {/* Referral Link & Actions with Thumb Reach */}
       <div className="glass-card">
         <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
           {t('refer.uniqueLink')}
         </label>
 
-        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '4px 6px 4px 12px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '6px 8px 6px 12px', marginBottom: '12px' }}>
           <input
             type="text"
             readOnly
@@ -93,60 +97,41 @@ export default function ReferralView({ user }) {
           <button
             onClick={handleCopy}
             className="btn-secondary"
-            style={{ padding: '8px 12px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
+            style={{ padding: '8px 12px', minHeight: '36px', fontSize: '12px', borderRadius: 'var(--radius-sm)' }}
           >
             {copied ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
             {copied ? t('refer.copied') : t('refer.copy')}
           </button>
         </div>
 
-        <button className="btn-primary" onClick={handleShare} style={{ background: 'var(--gradient-purple)' }}>
-          <Share2 size={16} />
+        {/* Big Ergonomic Telegram Share Button */}
+        <button
+          onClick={handleShare}
+          className="btn-primary"
+          style={{ background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)', boxShadow: '0 4px 18px rgba(2, 132, 199, 0.35)' }}
+        >
+          <Share2 size={18} />
           {t('refer.shareTelegram')}
         </button>
       </div>
 
-      {/* How it Works Guide */}
+      {/* How It Works Explainer */}
       <div className="glass-card">
-        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('refer.howItWorks')}</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>1</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step1')}</p>
+        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px' }}>{t('refer.howItWorks')}</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-cyan)', fontWeight: '800' }}>1.</span>
+            <span>{t('refer.step1')}</span>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>2</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step2')}</p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-purple)', fontWeight: '800' }}>2.</span>
+            <span>{t('refer.step2')}</span>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>3</span>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('refer.step3')}</p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>3.</span>
+            <span>{t('refer.step3')}</span>
           </div>
         </div>
-      </div>
-
-      {/* Invited Friends List */}
-      <div className="glass-card">
-        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('refer.invitedFriends')} ({referralCount > 0 ? referralCount : '0'})</h4>
-        {invitedFriends.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '16px 8px' }}>
-            <UserPlus size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px', display: 'block' }} />
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('refer.noFriends')}</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{t('refer.shareToStart')}</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {invitedFriends.map((friend) => (
-              <div key={friend.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: 'var(--radius-md)' }}>
-                <div>
-                  <p style={{ fontSize: '13px', fontWeight: '600' }}>{friend.name}</p>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{friend.username} • {friend.adsWatched} ads</span>
-                </div>
-                <span className="badge badge-emerald">{friend.bonus}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

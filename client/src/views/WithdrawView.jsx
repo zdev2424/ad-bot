@@ -4,6 +4,7 @@ import { withdrawalApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { ALL_COUNTRIES } from '../utils/countries';
 import { COUNTRY_PAYMENT_CONFIG } from '../utils/paymentMethods';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
   const { t } = useLanguage();
@@ -76,6 +77,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
   );
 
   const handleSelectCountry = (country) => {
+    triggerHaptic('selection');
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery('');
@@ -104,20 +106,24 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
     setErrorMsg(null);
 
     if (!selectedCountry) {
+      triggerHaptic('warning');
       setErrorMsg('Please select your country first.');
       return;
     }
 
     if (payoutMode === 'local' && hasLocalMethods && !localMethodId) {
+      triggerHaptic('warning');
       setErrorMsg('Please select a local payment provider.');
       return;
     }
 
     if (!isFullyEligible) {
+      triggerHaptic('warning');
       setErrorMsg('Please complete 20 ad watches and 10 friend referrals to unlock withdrawals.');
       return;
     }
 
+    triggerHaptic('heavy');
     setSubmitting(true);
     try {
       // Show energetic effect for 1.1s for user feedback before launching popup
@@ -126,6 +132,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
       // Call backend (v1: status flag only, zero address data sent)
       const res = await withdrawalApi.request({ devBypass });
       if (res.success) {
+        triggerHaptic('success');
         setLiveStatus('pending');
         setShowQueueModal(true);
         if (onStatusChange) {
@@ -133,6 +140,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
         }
       }
     } catch (err) {
+      triggerHaptic('error');
       setErrorMsg(err.message || 'Failed to submit withdrawal request.');
     } finally {
       setSubmitting(false);

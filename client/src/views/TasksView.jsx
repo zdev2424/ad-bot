@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, CheckCircle, Clock, PlayCircle, Sparkles, AlertCircle, RefreshCw, Zap } from 'lucide-react';
+import { Tv, CheckCircle, Clock, PlayCircle, Sparkles, AlertCircle, RefreshCw, Zap, Play } from 'lucide-react';
 import { adsgramService } from '../services/adsgram';
 import { tasksApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { triggerHaptic } from '../utils/haptics';
 
 export default function TasksView({ user, onAdCompleted }) {
   const { t } = useLanguage();
@@ -43,6 +44,7 @@ export default function TasksView({ user, onAdCompleted }) {
       setCooldownTime((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          triggerHaptic('light');
           return 0;
         }
         return prev - 1;
@@ -54,15 +56,18 @@ export default function TasksView({ user, onAdCompleted }) {
 
   const handleWatchAd = async (slotNum) => {
     if (cooldownTime > 0) {
+      triggerHaptic('warning');
       setNotification({ type: 'warning', text: t('tasks.nextUnlock', { time: cooldownTime }) });
       return;
     }
 
     if (completedSlots.includes(slotNum)) {
+      triggerHaptic('light');
       setNotification({ type: 'info', text: `Slot #${slotNum} already completed today!` });
       return;
     }
 
+    triggerHaptic('medium');
     setWatchingSlot(slotNum);
     setNotification(null);
 
@@ -71,6 +76,7 @@ export default function TasksView({ user, onAdCompleted }) {
       const result = await tasksApi.complete(slotNum);
 
       if (result.success) {
+        triggerHaptic('success');
         setCompletedSlots((prev) => [...prev, slotNum]);
         setCooldownTime(result.cooldownSeconds || 15);
         setNotification({
@@ -84,6 +90,7 @@ export default function TasksView({ user, onAdCompleted }) {
       }
     } catch (error) {
       console.error('Ad Watch error:', error);
+      triggerHaptic('error');
       setNotification({
         type: 'error',
         text: error.message || 'Ad playback could not be verified. Please try again.'
@@ -100,10 +107,10 @@ export default function TasksView({ user, onAdCompleted }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header Banner */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(30, 41, 67, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)' }}>
+      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(30, 41, 67, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Tv size={18} color="var(--accent-blue)" />
             </div>
             <div>
@@ -118,7 +125,7 @@ export default function TasksView({ user, onAdCompleted }) {
         <div style={{ marginTop: '10px', marginBottom: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>{t('tasks.dailyProgress')}</span>
-            <span style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>
+            <span className="tabular-nums" style={{ fontWeight: '800', color: 'var(--accent-cyan)' }}>
               {watchedCount} / {totalSlots} ({progressPercent}%)
             </span>
           </div>
@@ -129,9 +136,9 @@ export default function TasksView({ user, onAdCompleted }) {
 
         {/* Cooldown Alert */}
         {cooldownTime > 0 && (
-          <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+          <div style={{ marginTop: '10px', padding: '10px 14px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
             <Clock size={16} color="var(--accent-amber)" />
-            <span style={{ fontSize: '12px', color: 'var(--accent-amber)', fontWeight: '600' }}>
+            <span className="tabular-nums" style={{ fontSize: '12px', color: 'var(--accent-amber)', fontWeight: '700' }}>
               {t('tasks.nextUnlock', { time: cooldownTime })}
             </span>
           </div>
@@ -141,7 +148,7 @@ export default function TasksView({ user, onAdCompleted }) {
         {notification && (
           <div style={{
             marginTop: '10px',
-            padding: '8px 12px',
+            padding: '10px 14px',
             borderRadius: 'var(--radius-md)',
             background: notification.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
             border: `1px solid ${notification.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
@@ -150,28 +157,60 @@ export default function TasksView({ user, onAdCompleted }) {
             gap: '8px'
           }}>
             <Sparkles size={14} color={notification.type === 'success' ? 'var(--accent-emerald)' : notification.type === 'error' ? 'var(--accent-rose)' : 'var(--accent-blue)'} />
-            <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>{notification.text}</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600' }}>{notification.text}</span>
           </div>
         )}
       </div>
 
+      {/* Primary Ergonomic Thumb Action Button */}
+      {nextTargetSlot <= totalSlots && (
+        <button
+          onClick={() => handleWatchAd(nextTargetSlot)}
+          disabled={watchingSlot !== null || cooldownTime > 0}
+          className="btn-primary"
+          style={{
+            background: cooldownTime > 0 ? 'rgba(15, 23, 42, 0.8)' : 'var(--gradient-primary)',
+            border: cooldownTime > 0 ? '1px solid rgba(245, 158, 11, 0.4)' : undefined,
+            color: cooldownTime > 0 ? 'var(--accent-amber)' : '#fff',
+            boxShadow: cooldownTime > 0 ? 'none' : '0 4px 20px rgba(6, 182, 212, 0.4)'
+          }}
+        >
+          {watchingSlot === nextTargetSlot ? (
+            <>
+              <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <span>Playing Ad #{nextTargetSlot}...</span>
+            </>
+          ) : cooldownTime > 0 ? (
+            <>
+              <Clock size={16} color="var(--accent-amber)" />
+              <span className="tabular-nums">Cooldown: {cooldownTime}s remaining</span>
+            </>
+          ) : (
+            <>
+              <Play size={16} fill="currentColor" />
+              <span>Watch Slot #{nextTargetSlot} (+${(0.005).toFixed(3)})</span>
+            </>
+          )}
+        </button>
+      )}
+
       {/* Grid Status Legend */}
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(16, 185, 129, 0.3)', border: '1px solid var(--accent-emerald)' }} />
           <span>{t('tasks.watched')}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--gradient-primary)' }} />
           <span>{t('tasks.nextReady')}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-color)' }} />
           <span>{t('tasks.locked')}</span>
         </div>
       </div>
 
-      {/* 5-Column x 20-Row Grid (100 Slots) */}
+      {/* 5-Column x 20-Row Grid (100 Slots) with Tactile Spring Taps */}
       <div
         style={{
           display: 'grid',
@@ -195,9 +234,9 @@ export default function TasksView({ user, onAdCompleted }) {
             cardBg = 'rgba(16, 185, 129, 0.12)';
             borderColor = 'rgba(16, 185, 129, 0.35)';
           } else if (isCurrentTarget) {
-            cardBg = 'linear-gradient(135deg, rgba(30, 58, 138, 0.7) 0%, rgba(14, 116, 144, 0.7) 100%)';
+            cardBg = 'linear-gradient(135deg, rgba(30, 58, 138, 0.75) 0%, rgba(14, 116, 144, 0.75) 100%)';
             borderColor = 'var(--accent-cyan)';
-            shadow = '0 0 12px rgba(6, 182, 212, 0.35)';
+            shadow = '0 0 14px rgba(6, 182, 212, 0.45)';
           }
 
           return (
@@ -218,28 +257,29 @@ export default function TasksView({ user, onAdCompleted }) {
                 gap: '2px',
                 padding: '4px',
                 cursor: isWatched ? 'default' : 'pointer',
-                opacity: isFutureLocked ? 0.7 : 1,
+                opacity: isFutureLocked ? 0.65 : 1,
                 position: 'relative',
-                transition: 'all 0.2s ease',
-                outline: 'none'
+                transition: 'transform 0.12s var(--ease-spring), border-color 0.15s ease',
+                outline: 'none',
+                touchAction: 'manipulation'
               }}
             >
               {isWatching ? (
                 <div style={{ width: '14px', height: '14px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               ) : isWatched ? (
                 <>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)' }}>#{slotNumber}</span>
+                  <span className="tabular-nums" style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)' }}>#{slotNumber}</span>
                   <CheckCircle size={14} color="var(--accent-emerald)" />
                 </>
               ) : isCurrentTarget ? (
                 <>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#fff' }}>#{slotNumber}</span>
+                  <span className="tabular-nums" style={{ fontSize: '11px', fontWeight: '800', color: '#fff' }}>#{slotNumber}</span>
                   <PlayCircle size={14} color="var(--accent-cyan)" />
-                  <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{t('tasks.watch')}</span>
+                  <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent-cyan)' }}>{t('tasks.watch')}</span>
                 </>
               ) : (
                 <>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)' }}>#{slotNumber}</span>
+                  <span className="tabular-nums" style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)' }}>#{slotNumber}</span>
                   <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>+$0.005</span>
                 </>
               )}
