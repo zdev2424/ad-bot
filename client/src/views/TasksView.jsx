@@ -107,10 +107,10 @@ export default function TasksView({ user, onAdCompleted }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header Banner */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(30, 41, 67, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)' }}>
+      <div className="glass-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Tv size={18} color="var(--accent-blue)" />
             </div>
             <div>
@@ -136,7 +136,7 @@ export default function TasksView({ user, onAdCompleted }) {
 
         {/* Cooldown Alert */}
         {cooldownTime > 0 && (
-          <div style={{ marginTop: '10px', padding: '10px 14px', background: 'rgba(245, 158, 11, 0.15)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+          <div style={{ marginTop: '10px', padding: '10px 14px', background: 'rgba(245, 158, 11, 0.12)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
             <Clock size={16} color="var(--accent-amber)" />
             <span className="tabular-nums" style={{ fontSize: '12px', color: 'var(--accent-amber)', fontWeight: '700' }}>
               {t('tasks.nextUnlock', { time: cooldownTime })}
@@ -150,8 +150,8 @@ export default function TasksView({ user, onAdCompleted }) {
             marginTop: '10px',
             padding: '10px 14px',
             borderRadius: 'var(--radius-md)',
-            background: notification.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-            border: `1px solid ${notification.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
+            background: notification.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+            border: `1px solid ${notification.type === 'success' ? 'rgba(16, 185, 129, 0.25)' : notification.type === 'error' ? 'rgba(244, 63, 94, 0.25)' : 'rgba(59, 130, 246, 0.25)'}`,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
@@ -169,10 +169,10 @@ export default function TasksView({ user, onAdCompleted }) {
           disabled={watchingSlot !== null || cooldownTime > 0}
           className="btn-primary"
           style={{
-            background: cooldownTime > 0 ? 'rgba(15, 23, 42, 0.8)' : 'var(--gradient-primary)',
-            border: cooldownTime > 0 ? '1px solid rgba(245, 158, 11, 0.4)' : undefined,
+            background: cooldownTime > 0 ? 'rgba(15, 23, 42, 0.8)' : undefined,
+            border: cooldownTime > 0 ? '1px solid rgba(245, 158, 11, 0.35)' : undefined,
             color: cooldownTime > 0 ? 'var(--accent-amber)' : '#fff',
-            boxShadow: cooldownTime > 0 ? 'none' : '0 4px 20px rgba(6, 182, 212, 0.4)'
+            boxShadow: cooldownTime > 0 ? 'none' : undefined
           }}
         >
           {watchingSlot === nextTargetSlot ? (
@@ -195,13 +195,13 @@ export default function TasksView({ user, onAdCompleted }) {
       )}
 
       {/* Grid Status Legend */}
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px 12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px 12px', background: 'rgba(10, 15, 26, 0.65)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(16, 185, 129, 0.3)', border: '1px solid var(--accent-emerald)' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid var(--accent-emerald)' }} />
           <span>{t('tasks.watched')}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--gradient-primary)' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'rgba(37, 99, 235, 0.3)', border: '1px solid var(--accent-blue)' }} />
           <span>{t('tasks.nextReady')}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -226,17 +226,17 @@ export default function TasksView({ user, onAdCompleted }) {
           const isWatching = watchingSlot === slotNumber;
           const isFutureLocked = slotNumber > nextTargetSlot;
 
-          let cardBg = 'rgba(18, 24, 38, 0.7)';
+          let cardBg = 'rgba(14, 20, 34, 0.7)';
           let borderColor = 'var(--border-color)';
           let shadow = 'none';
 
           if (isWatched) {
-            cardBg = 'rgba(16, 185, 129, 0.12)';
-            borderColor = 'rgba(16, 185, 129, 0.35)';
+            cardBg = 'rgba(16, 185, 129, 0.1)';
+            borderColor = 'rgba(16, 185, 129, 0.3)';
           } else if (isCurrentTarget) {
-            cardBg = 'linear-gradient(135deg, rgba(30, 58, 138, 0.75) 0%, rgba(14, 116, 144, 0.75) 100%)';
-            borderColor = 'var(--accent-cyan)';
-            shadow = '0 0 14px rgba(6, 182, 212, 0.45)';
+            cardBg = 'rgba(37, 99, 235, 0.2)';
+            borderColor = 'var(--accent-blue)';
+            shadow = '0 0 10px rgba(37, 99, 235, 0.3)';
           }
 
           return (

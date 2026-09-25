@@ -79,7 +79,7 @@ export default function TermsModal({ isOpen, onClose, isFirstTime = false }) {
               height: '50px',
               borderRadius: '50%',
               background: isFirstTime
-                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)'
+                ? 'rgba(59, 130, 246, 0.15)'
                 : 'rgba(16, 185, 129, 0.15)',
               display: 'flex',
               alignItems: 'center',

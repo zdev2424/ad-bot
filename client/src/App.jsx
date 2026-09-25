@@ -101,7 +101,7 @@ function AppContent() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Logo size={32} />
           <div>
-            <h1 style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '-0.02em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
               EarnCashIO
             </h1>
           </div>

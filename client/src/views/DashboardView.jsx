@@ -73,31 +73,27 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
         </button>
       </div>
 
-      {/* Main Balance Hero Card with Radiant Glow */}
+      {/* Main Balance Hero Card */}
       <div
         className="glass-card"
         style={{
-          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.45) 0%, rgba(15, 23, 42, 0.95) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.35)',
-          borderTop: '1px solid rgba(96, 165, 250, 0.45)',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)'
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          borderTop: '1px solid var(--border-specular)',
+          position: 'relative'
         }}
       >
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '130px', height: '130px', background: 'rgba(6, 182, 212, 0.22)', borderRadius: '50%', filter: 'blur(35px)', pointerEvents: 'none' }} />
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
             {t('dashboard.currentBalance')}
           </span>
-          <span style={{ fontSize: '11px', padding: '3px 9px', background: 'rgba(255,255,255,0.08)', borderRadius: 'var(--radius-full)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
+          <span style={{ fontSize: '11px', padding: '3px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
             <Zap size={11} /> {t('dashboard.usdEquivalent')}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '14px' }}>
-          <span className="tabular-nums" style={{ fontSize: '40px', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.03em', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span className="tabular-nums" style={{ fontSize: '38px', fontWeight: '800', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', color: '#ffffff' }}>
             ${balance.toFixed(3)}
           </span>
           <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-muted)' }}>USD</span>

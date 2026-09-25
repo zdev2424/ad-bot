@@ -58,10 +58,10 @@ export default function ReferralView({ user }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Referral Header Card */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%)', borderColor: 'rgba(139, 92, 246, 0.35)' }}>
+      <div className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Gift size={20} color="var(--accent-purple)" />
+          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Gift size={20} color="var(--accent-blue)" />
           </div>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('refer.title')}</h3>
@@ -69,7 +69,7 @@ export default function ReferralView({ user }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', background: 'rgba(10, 15, 26, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('refer.invitedFriends')}</span>
             <p className="tabular-nums" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>{referralCount}</p>
@@ -87,12 +87,12 @@ export default function ReferralView({ user }) {
           {t('refer.uniqueLink')}
         </label>
 
-        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '6px 8px 6px 12px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(10, 15, 26, 0.85)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '6px 8px 6px 12px', marginBottom: '12px' }}>
           <input
             type="text"
             readOnly
             value={refLink}
-            style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--accent-cyan)', fontSize: '12px', outline: 'none', fontFamily: 'monospace' }}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: '#60a5fa', fontSize: '12px', outline: 'none', fontFamily: 'monospace' }}
           />
           <button
             onClick={handleCopy}
@@ -108,7 +108,6 @@ export default function ReferralView({ user }) {
         <button
           onClick={handleShare}
           className="btn-primary"
-          style={{ background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)', boxShadow: '0 4px 18px rgba(2, 132, 199, 0.35)' }}
         >
           <Share2 size={18} />
           {t('refer.shareTelegram')}

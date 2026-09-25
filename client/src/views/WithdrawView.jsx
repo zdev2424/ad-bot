@@ -152,21 +152,21 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
       {/* Header */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%)', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
+      <div className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Wallet size={20} color="var(--accent-emerald)" />
           </div>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('withdraw.title')}</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('withdraw.availableBalance')}: ${balance.toFixed(3)} USD</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('withdraw.availableBalance')}: <span className="tabular-nums" style={{ color: 'var(--accent-emerald)', fontWeight: '700' }}>${balance.toFixed(3)} USD</span></p>
           </div>
         </div>
       </div>
 
       {/* Persistent In-Queue Banner if active */}
       {(liveStatus === 'pending' || liveStatus === 'in_queue') && (
-        <div className="glass-card" style={{ borderColor: 'rgba(245, 158, 11, 0.5)', background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%)' }}>
+        <div className="glass-card" style={{ borderColor: 'rgba(245, 158, 11, 0.4)', background: 'rgba(245, 158, 11, 0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span className="badge badge-amber">
               <Clock size={12} /> Status: Pending in Queue
@@ -209,12 +209,12 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step1')}</span>
-            <span style={{ fontWeight: '700', color: isAdsEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
+            <span className="tabular-nums" style={{ fontWeight: '700', color: isAdsEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {adsWatched} / 20 {isAdsEligible && '✓'}
             </span>
           </div>
           <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${Math.min(100, (adsWatched / 20) * 100)}%`, background: isAdsEligible ? 'var(--gradient-emerald)' : 'var(--gradient-primary)' }} />
+            <div className="progress-bar-fill" style={{ width: `${Math.min(100, (adsWatched / 20) * 100)}%`, background: isAdsEligible ? 'var(--accent-emerald)' : 'var(--accent-blue)' }} />
           </div>
         </div>
 
@@ -222,12 +222,12 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
         <div style={{ marginBottom: '4px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>{t('withdraw.step2')}</span>
-            <span style={{ fontWeight: '700', color: isRefEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
+            <span className="tabular-nums" style={{ fontWeight: '700', color: isRefEligible ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
               {referralCount} / 10 {isRefEligible && '✓'}
             </span>
           </div>
           <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${Math.min(100, (referralCount / 10) * 100)}%`, background: isRefEligible ? 'var(--gradient-emerald)' : 'var(--gradient-primary)' }} />
+            <div className="progress-bar-fill" style={{ width: `${Math.min(100, (referralCount / 10) * 100)}%`, background: isRefEligible ? 'var(--accent-emerald)' : 'var(--accent-blue)' }} />
           </div>
         </div>
       </div>
@@ -585,14 +585,12 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
             className={`btn-primary ${submitting ? 'btn-processing-effect' : ''}`}
             style={{
               marginTop: '8px',
-              opacity: !isFullyEligible ? 0.7 : 1,
+              opacity: !isFullyEligible ? 0.6 : 1,
               background: liveStatus === 'pending' || liveStatus === 'in_queue'
-                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                ? 'rgba(245, 158, 11, 0.15)'
                 : !isFullyEligible
-                ? 'rgba(255,255,255,0.1)'
-                : submitting
-                ? undefined
-                : 'var(--gradient-primary)',
+                ? 'rgba(255,255,255,0.08)'
+                : undefined,
               border: liveStatus === 'pending' || liveStatus === 'in_queue'
                 ? '1px solid rgba(245, 158, 11, 0.4)'
                 : undefined,
@@ -610,7 +608,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
             ) : liveStatus === 'pending' || liveStatus === 'in_queue' ? (
               <>
                 <Clock size={16} color="var(--accent-amber)" />
-                <span>Pending</span>
+                <span>Pending in Queue</span>
               </>
             ) : !isFullyEligible ? (
               <>

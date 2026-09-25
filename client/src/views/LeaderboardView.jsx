@@ -77,9 +77,9 @@ export default function LeaderboardView() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header Banner */}
-      <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(180, 83, 9, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%)', borderColor: 'rgba(245, 158, 11, 0.3)' }}>
+      <div className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Trophy size={20} color="var(--accent-amber)" />
           </div>
           <div>
@@ -89,14 +89,14 @@ export default function LeaderboardView() {
         </div>
 
         {/* Platform Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: 'rgba(10, 15, 26, 0.7)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('leaderboard.totalPaid')}</span>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{platformStats.totalPaidOut}</p>
+            <p className="tabular-nums" style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-emerald)', marginTop: '2px' }}>{platformStats.totalPaidOut}</p>
           </div>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('leaderboard.avgTime')}</span>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-cyan)' }}>{platformStats.avgProcessingTime}</p>
+            <p style={{ fontSize: '16px', fontWeight: '800', color: 'var(--accent-cyan)', marginTop: '2px' }}>{platformStats.avgProcessingTime}</p>
           </div>
         </div>
       </div>
@@ -106,8 +106,8 @@ export default function LeaderboardView() {
         <div
           onClick={() => setSliderIndex((prev) => (prev + 1) % recentWithdrawals.length)}
           style={{
-            background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.22)',
             borderRadius: 'var(--radius-md)',
             padding: '8px 12px',
             display: 'flex',
@@ -115,11 +115,11 @@ export default function LeaderboardView() {
             justifyContent: 'space-between',
             cursor: 'pointer',
             overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            boxShadow: 'var(--shadow-sm)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.25)', fontSize: '12px', flexShrink: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', fontSize: '12px', flexShrink: 0 }}>
               💸
             </span>
             <div style={{ fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -127,7 +127,7 @@ export default function LeaderboardView() {
                 {currentSliderItem.user}
               </span>
               <span style={{ color: 'var(--text-secondary)', marginLeft: '4px' }}>
-                withdrew <strong style={{ color: 'var(--accent-emerald)' }}>{currentSliderItem.amount}</strong> {currentSliderItem.time}
+                withdrew <strong className="tabular-nums" style={{ color: 'var(--accent-emerald)' }}>{currentSliderItem.amount}</strong> {currentSliderItem.time}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>
                 ({currentSliderItem.method} {currentSliderItem.flag})
