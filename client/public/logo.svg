@@ -4,67 +4,58 @@
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0b1329" />
       <stop offset="50%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#050a18" />
+      <stop offset="100%" stop-color="#060b18" />
     </linearGradient>
 
-    <!-- Outer Ring Gradient -->
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06b6d4" />
-      <stop offset="50%" stop-color="#3b82f6" />
-      <stop offset="100%" stop-color="#10b981" />
-    </linearGradient>
-
-    <!-- Coin Gold Glow Gradient -->
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef08a" />
-      <stop offset="30%" stop-color="#f59e0b" />
-      <stop offset="70%" stop-color="#d97706" />
-      <stop offset="100%" stop-color="#fbbf24" />
-    </linearGradient>
-
-    <!-- Play Button Gradient -->
-    <linearGradient id="playGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Electric Cyan to Emerald Neon Gradient -->
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#06b6d4" />
       <stop offset="100%" stop-color="#10b981" />
     </linearGradient>
 
-    <!-- Glow Filter -->
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-    
-    <filter id="subtleGlow" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur stdDeviation="6" result="blur" />
+    <!-- Accent Gold Gradient -->
+    <linearGradient id="sparkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+
+    <!-- Outer Glow -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="14" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <!-- Squircle App Container -->
-  <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#bgGrad)" stroke="rgba(59, 130, 246, 0.3)" stroke-width="6" />
+  <!-- Modern Dark Squircle App Frame -->
+  <rect x="28" y="28" width="456" height="456" rx="112" fill="url(#bgGrad)" stroke="rgba(6, 182, 212, 0.4)" stroke-width="6" />
 
-  <!-- Ambient Glow -->
-  <circle cx="256" cy="256" r="160" fill="url(#ringGrad)" opacity="0.18" filter="url(#glow)" />
+  <!-- Ambient Glow Behind Symbol -->
+  <circle cx="256" cy="256" r="140" fill="url(#neonGrad)" opacity="0.16" filter="url(#neonGlow)" />
 
-  <!-- Outer Cyber Orbit Ring -->
-  <circle cx="256" cy="256" r="168" fill="none" stroke="url(#ringGrad)" stroke-width="4" stroke-dasharray="24 12" opacity="0.6" />
-  
-  <!-- Outer Gold Coin Border -->
-  <circle cx="256" cy="256" r="148" fill="#131e38" stroke="url(#goldGrad)" stroke-width="12" filter="url(#subtleGlow)" />
+  <!-- Outer Orbit Tech Ring -->
+  <circle cx="256" cy="256" r="162" fill="none" stroke="url(#neonGrad)" stroke-width="5" stroke-dasharray="28 14" opacity="0.6" />
 
-  <!-- Inner Coin Ridge -->
-  <circle cx="256" cy="256" r="126" fill="#0d1527" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="6 6" opacity="0.8" />
+  <!-- Bold Stylized "E" + Energy Lightning Path -->
+  <!-- Top bar of E leading to an upward lightning angle -->
+  <path d="M 330 156 L 206 156 C 168 156 142 186 142 224 L 142 288 C 142 326 168 356 206 356 L 330 356 C 342 356 350 346 350 334 C 350 322 342 314 330 314 L 214 314 C 196 314 186 302 186 288 L 186 224 C 186 210 196 198 214 198 L 330 198 C 342 198 350 188 350 177 C 350 165 342 156 330 156 Z" 
+        fill="url(#neonGrad)" 
+        filter="url(#neonGlow)" />
 
-  <!-- Play Symbol (Video Ad / Gaming reward) -->
-  <polygon points="220,186 330,256 220,326" fill="url(#playGrad)" filter="url(#glow)" />
-  <polygon points="220,186 330,256 220,326" fill="url(#playGrad)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+  <!-- Center Lightning / Cash Beam projecting from E -->
+  <path d="M 186 240 L 300 240 L 270 272 L 344 272 L 254 360 L 274 292 L 210 292 Z"
+        fill="url(#neonGrad)" 
+        stroke="#ffffff" 
+        stroke-width="2" 
+        stroke-linejoin="round" />
 
-  <!-- Lightning / Fast Payout Sparkles -->
-  <circle cx="350" cy="160" r="8" fill="#38bdf8" filter="url(#glow)" />
-  <circle cx="150" cy="340" r="6" fill="#10b981" filter="url(#glow)" />
-  <circle cx="370" cy="320" r="5" fill="#fbbf24" filter="url(#glow)" />
-  <circle cx="160" cy="180" r="7" fill="#818cf8" filter="url(#glow)" />
+  <!-- Central 4-Point Reward Sparkle Diamond -->
+  <path d="M 360 148 Q 360 168 380 168 Q 360 168 360 188 Q 360 168 340 168 Q 360 168 360 148 Z" 
+        fill="url(#sparkGrad)" 
+        filter="url(#neonGlow)" />
 
-  <!-- Dollar/Crypto Diamond Accent at Top -->
-  <path d="M 256 142 L 264 154 L 256 166 L 248 154 Z" fill="url(#goldGrad)" filter="url(#subtleGlow)" />
+  <!-- Mini Sparkle Particles -->
+  <circle cx="152" cy="152" r="7" fill="#38bdf8" filter="url(#neonGlow)" />
+  <circle cx="368" cy="358" r="6" fill="#10b981" filter="url(#neonGlow)" />
+  <circle cx="138" cy="340" r="5" fill="#f59e0b" filter="url(#neonGlow)" />
 </svg>
