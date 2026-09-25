@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ALL_COUNTRIES } from '../utils/countries';
 import { COUNTRY_PAYMENT_CONFIG } from '../utils/paymentMethods';
 
-export default function WithdrawView({ user, onStatusChange }) {
+export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
   const { t } = useLanguage();
   const [selectedCountry, setSelectedCountry] = useState(null); // { code, name, flag }
   const [searchQuery, setSearchQuery] = useState('');
@@ -617,6 +617,30 @@ export default function WithdrawView({ user, onStatusChange }) {
             )}
           </button>
         </form>
+
+        {/* Terms & Rules Link */}
+        {onOpenTerms && (
+          <div style={{ textAlign: 'center', marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={onOpenTerms}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '11px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                opacity: 0.85
+              }}
+            >
+              📜 <span>View Withdrawal Terms & Fair Play Rules</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Pop-up Modal for "Pending in Queue" */}

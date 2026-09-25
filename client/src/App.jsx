@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import Navbar from './components/Navbar';
@@ -10,12 +10,29 @@ import WithdrawView from './views/WithdrawView';
 import LeaderboardView from './views/LeaderboardView';
 import AdminView from './views/AdminView';
 import Logo from './components/Logo';
+import TermsModal from './components/TermsModal';
 import { Sparkles, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
   const { user, setUser, loading } = useAuth();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [isFirstTimeTerms, setIsFirstTimeTerms] = useState(false);
+
+  // Check if user has accepted terms on first login
+  useEffect(() => {
+    const hasAccepted = localStorage.getItem('earncashio_terms_accepted_v1');
+    if (!hasAccepted && !loading) {
+      setIsFirstTimeTerms(true);
+      setTermsModalOpen(true);
+    }
+  }, [loading]);
+
+  const handleOpenTerms = () => {
+    setIsFirstTimeTerms(false);
+    setTermsModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -120,16 +137,23 @@ function AppContent() {
 
       {/* Main View Switcher */}
       <main style={{ padding: '16px 16px 20px', flex: 1 }}>
-        {activeTab === 'dashboard' && <DashboardView user={user} setActiveTab={setActiveTab} />}
+        {activeTab === 'dashboard' && <DashboardView user={user} setActiveTab={setActiveTab} onOpenTerms={handleOpenTerms} />}
         {activeTab === 'tasks' && <TasksView user={user} onAdCompleted={handleAdCompleted} />}
         {activeTab === 'refer' && <ReferralView user={user} />}
-        {activeTab === 'withdraw' && <WithdrawView user={user} onStatusChange={handleWithdrawalStatusChange} />}
+        {activeTab === 'withdraw' && <WithdrawView user={user} onStatusChange={handleWithdrawalStatusChange} onOpenTerms={handleOpenTerms} />}
         {activeTab === 'leaderboard' && <LeaderboardView />}
         {activeTab === 'admin' && <AdminView user={user} />}
       </main>
 
       {/* Bottom Navigation */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={user?.isAdmin} />
+
+      {/* Terms & Conditions / Welcome Onboarding Modal */}
+      <TermsModal
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+        isFirstTime={isFirstTimeTerms}
+      />
     </div>
   );
 }

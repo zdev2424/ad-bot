@@ -3,7 +3,7 @@ import { Sparkles, Tv, Users, Wallet, ArrowUpRight, CheckCircle2, TrendingUp, Re
 import { dashboardApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function DashboardView({ user, setActiveTab }) {
+export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
   const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -181,6 +181,30 @@ export default function DashboardView({ user, setActiveTab }) {
         <Tv size={18} />
         {t('dashboard.ctaButton')}
       </button>
+
+      {/* Terms & Privacy Footer Link */}
+      {onOpenTerms && (
+        <div style={{ textAlign: 'center', marginTop: '2px', paddingBottom: '8px' }}>
+          <button
+            type="button"
+            onClick={onOpenTerms}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '11px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: 0.8
+            }}
+          >
+            📜 <span>Terms of Service & Fair Play Rules</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
