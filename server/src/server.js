@@ -70,6 +70,20 @@ app.get('/api', (req, res) => {
   });
 });
 
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Endpoint not found' });
+});
+
+// Global Error Handler to prevent process crashes
+app.use((err, req, res, next) => {
+  console.error('💥 [Server Error]', err.stack || err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 [EarnCashIO Server] running on http://localhost:${PORT}`);
 });

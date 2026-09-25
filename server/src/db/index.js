@@ -19,6 +19,8 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('busy_timeout = 5000'); // Wait up to 5s on concurrent write locks instead of crashing
 db.pragma('synchronous = NORMAL'); // Significantly faster disk I/O in WAL mode
+db.pragma('cache_size = -64000'); // Allocate 64MB RAM page cache for lightning reads
+db.pragma('temp_store = MEMORY'); // Store temporary tables and sorting operations in RAM
 
 /**
  * Initialize all database tables and indexes

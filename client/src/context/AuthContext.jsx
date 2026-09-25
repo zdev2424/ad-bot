@@ -17,6 +17,9 @@ export function AuthProvider({ children }) {
           const tg = window.Telegram.WebApp;
           tg.ready();
           tg.expand();
+          if (tg.setHeaderColor) tg.setHeaderColor('#090d16');
+          if (tg.setBackgroundColor) tg.setBackgroundColor('#090d16');
+          if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
           setIsTelegramEnvironment(Boolean(tg.initData));
         }
 
