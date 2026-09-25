@@ -64,22 +64,32 @@ export const LeaderboardService = {
     const cached = cacheLayer.get('leaderboard_data');
     if (cached) return cached;
 
-    // 1. Query top earners from SQLite database
-    const topUsers = db.prepare(`
-      SELECT 
-        username,
-        first_name,
-        telegram_id,
-        referral_count,
-        total_earned
-      FROM users
-      ORDER BY total_earned DESC, referral_count DESC
-      LIMIT 10
-    `).all();
-
     const rankBadges = ['🥇', '🥈', '🥉', '#4', '#5', '#6', '#7', '#8', '#9', '#10'];
 
-    const formattedTopEarners = topUsers.map((u, idx) => {
+    // 1. Get dynamic weekly base list (all slots $4.80 to $14.80)
+    const dynamicWeeklySeeds = this.getWeeklyTopEarners();
+    const tenthPlaceThreshold = parseFloat(String(dynamicWeeklySeeds[9].earned).replace('$', '')) || 4.80;
+
+    // 2. Query only real database users who earned at least the threshold
+    let realTopUsers = [];
+    try {
+      realTopUsers = db.prepare(`
+        SELECT 
+          username,
+          first_name,
+          telegram_id,
+          referral_count,
+          total_earned
+        FROM users
+        WHERE total_earned >= ?
+        ORDER BY total_earned DESC, referral_count DESC
+        LIMIT 10
+      `).all(tenthPlaceThreshold);
+    } catch (err) {
+      console.warn('Leaderboard DB query notice:', err.message);
+    }
+
+    const formattedRealUsers = realTopUsers.map((u, idx) => {
       const maskedName = this.maskUsername(u.telegram_id || u.username || idx + 101);
       return {
         rank: idx + 1,
@@ -90,36 +100,29 @@ export const LeaderboardService = {
       };
     });
 
-    // Merge with dynamic weekly earners to ensure full 10 ranked entries in order
-    const dynamicWeeklySeeds = this.getWeeklyTopEarners();
-
-    if (formattedTopEarners.length < 10) {
-      dynamicWeeklySeeds.forEach((s) => {
-        if (!formattedTopEarners.find((e) => e.name === s.name) && formattedTopEarners.length < 10) {
-          formattedTopEarners.push({
-            ...s,
-            rank: formattedTopEarners.length + 1,
-            badge: rankBadges[formattedTopEarners.length] || `#${formattedTopEarners.length + 1}`
-          });
-        }
-      });
-    }
+    // Merge real users with dynamic weekly seeds, filling all 10 slots
+    const combinedList = [...formattedRealUsers];
+    dynamicWeeklySeeds.forEach((seed) => {
+      if (combinedList.length < 10 && !combinedList.find((item) => item.name === seed.name)) {
+        combinedList.push(seed);
+      }
+    });
 
     // Sort strictly descending by earned value
-    formattedTopEarners.sort((a, b) => {
+    combinedList.sort((a, b) => {
       const numA = parseFloat(String(a.earned).replace('$', '')) || 0;
       const numB = parseFloat(String(b.earned).replace('$', '')) || 0;
       return numB - numA;
     });
 
     // Re-assign ranks 1..10
-    const finalTopEarners = formattedTopEarners.slice(0, 10).map((item, idx) => ({
+    const finalTopEarners = combinedList.slice(0, 10).map((item, idx) => ({
       ...item,
       rank: idx + 1,
       badge: rankBadges[idx] || `#${idx + 1}`
     }));
 
-    // 2. Realistic recent withdrawals for the live auto-slider
+    // 3. Realistic recent withdrawals for the live auto-slider
     const recentWithdrawals = [
       { id: 1, user: 'user123**22', amount: '$3.00', time: '12m ago', method: 'M-Pesa', flag: '🇰🇪' },
       { id: 2, user: 'user489**01', amount: '$5.50', time: '38m ago', method: 'UPI', flag: '🇮🇳' },
