@@ -15,13 +15,51 @@ export const LeaderboardService = {
   },
 
   /**
-   * Returns live leaderboard data, auto-slider withdrawals, and top earners rankings
+   * Generates a realistic weekly leaderboard that automatically rotates week-over-week
+   */
+  getWeeklyTopEarners() {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const weekNumber = Math.floor(((now - startOfYear) / (24 * 60 * 60 * 1000) + startOfYear.getDay() + 1) / 7);
+
+    // Dynamic top weekly base amount (e.g., $9.20 to $11.80 depending on week)
+    const baseTop = 9.20 + ((weekNumber * 3) % 25) * 0.10;
+    const rankBadges = ['🥇', '🥈', '🥉', '#4', '#5', '#6', '#7', '#8', '#9', '#10'];
+
+    const userPool = [
+      'user94**12', 'user78**35', 'user51**80', 'user33**49', 'user82**06',
+      'user19**67', 'user60**23', 'user45**91', 'user28**74', 'user11**59',
+      'user64**28', 'user92**15', 'user47**33', 'user85**09', 'user20**76'
+    ];
+
+    // Shift user pool deterministically per week
+    const shift = weekNumber % userPool.length;
+    const shiftedUsers = [...userPool.slice(shift), ...userPool.slice(0, shift)];
+
+    // Strictly descending step-downs
+    const stepDowns = [0, 1.95, 3.40, 4.55, 5.15, 5.65, 6.05, 6.35, 6.65, 6.95];
+
+    return rankBadges.map((badge, idx) => {
+      const earnedVal = Math.max(2.60, parseFloat((baseTop - stepDowns[idx]).toFixed(2)));
+      const refsCount = Math.max(7, Math.round(earnedVal * 2.8 + ((weekNumber + idx) % 3)));
+      return {
+        rank: idx + 1,
+        name: shiftedUsers[idx] || `user${idx + 10}**${idx + 20}`,
+        refs: refsCount,
+        earned: `$${earnedVal.toFixed(2)}`,
+        badge: badge
+      };
+    });
+  },
+
+  /**
+   * Returns live leaderboard data, auto-slider withdrawals, and dynamic weekly top earners rankings
    */
   getLeaderboardData() {
     const cached = cacheLayer.get('leaderboard_data');
     if (cached) return cached;
 
-    // 1. Query top earners / referrers from SQLite
+    // 1. Query top earners from SQLite database
     const topUsers = db.prepare(`
       SELECT 
         username,
@@ -47,27 +85,34 @@ export const LeaderboardService = {
       };
     });
 
-    // Realistic, clean descending weekly top earners
-    const fallbackTopEarners = [
-      { rank: 1, name: 'user94**12', refs: 28, earned: '$9.80', badge: '🥇' },
-      { rank: 2, name: 'user78**35', refs: 21, earned: '$7.85', badge: '🥈' },
-      { rank: 3, name: 'user51**80', refs: 17, earned: '$6.40', badge: '🥉' },
-      { rank: 4, name: 'user33**49', refs: 14, earned: '$5.20', badge: '#4' },
-      { rank: 5, name: 'user82**06', refs: 12, earned: '$4.65', badge: '#5' },
-      { rank: 6, name: 'user19**67', refs: 11, earned: '$4.10', badge: '#6' },
-      { rank: 7, name: 'user60**23', refs: 10, earned: '$3.75', badge: '#7' },
-      { rank: 8, name: 'user45**91', refs: 10, earned: '$3.50', badge: '#8' },
-      { rank: 9, name: 'user28**74', refs: 9, earned: '$3.15', badge: '#9' },
-      { rank: 10, name: 'user11**59', refs: 8, earned: '$2.80', badge: '#10' }
-    ];
+    // Merge with dynamic weekly earners to ensure full 10 ranked entries in order
+    const dynamicWeeklySeeds = this.getWeeklyTopEarners();
 
-    if (formattedTopEarners.length < 5) {
-      fallbackTopEarners.forEach((s) => {
-        if (!formattedTopEarners.find((e) => e.name === s.name)) {
-          formattedTopEarners.push(s);
+    if (formattedTopEarners.length < 10) {
+      dynamicWeeklySeeds.forEach((s) => {
+        if (!formattedTopEarners.find((e) => e.name === s.name) && formattedTopEarners.length < 10) {
+          formattedTopEarners.push({
+            ...s,
+            rank: formattedTopEarners.length + 1,
+            badge: rankBadges[formattedTopEarners.length] || `#${formattedTopEarners.length + 1}`
+          });
         }
       });
     }
+
+    // Sort strictly descending by earned value
+    formattedTopEarners.sort((a, b) => {
+      const numA = parseFloat(String(a.earned).replace('$', '')) || 0;
+      const numB = parseFloat(String(b.earned).replace('$', '')) || 0;
+      return numB - numA;
+    });
+
+    // Re-assign ranks 1..10
+    const finalTopEarners = formattedTopEarners.slice(0, 10).map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+      badge: rankBadges[idx] || `#${idx + 1}`
+    }));
 
     // 2. Realistic recent withdrawals for the live auto-slider
     const recentWithdrawals = [
@@ -89,7 +134,7 @@ export const LeaderboardService = {
 
     const payload = {
       recentWithdrawals,
-      topEarners: formattedTopEarners.slice(0, 10),
+      topEarners: finalTopEarners,
       platformStats: {
         totalPaidOut: '$386.50+',
         avgProcessingTime: '~2 Hours',
