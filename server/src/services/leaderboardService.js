@@ -16,32 +16,37 @@ export const LeaderboardService = {
 
   /**
    * Generates a realistic weekly leaderboard that automatically rotates week-over-week
+   * Rank 1 is between ~$10.00 and ~$15.00, Rank 10 is > $4.80 (around $5)
    */
   getWeeklyTopEarners() {
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const weekNumber = Math.floor(((now - startOfYear) / (24 * 60 * 60 * 1000) + startOfYear.getDay() + 1) / 7);
 
-    // Dynamic top weekly base amount (e.g., $9.20 to $11.80 depending on week)
-    const baseTop = 9.20 + ((weekNumber * 3) % 25) * 0.10;
+    // 1st place ranges dynamically between $10.50 and $14.80 depending on week
+    const baseTop = 10.50 + ((weekNumber * 7) % 44) * 0.10;
+    // 10th place is consistently > $4.80 (around $4.80 - $5.40)
+    const baseTenth = 4.80 + ((weekNumber * 3) % 7) * 0.10;
+
     const rankBadges = ['🥇', '🥈', '🥉', '#4', '#5', '#6', '#7', '#8', '#9', '#10'];
 
     const userPool = [
       'user94**12', 'user78**35', 'user51**80', 'user33**49', 'user82**06',
       'user19**67', 'user60**23', 'user45**91', 'user28**74', 'user11**59',
-      'user64**28', 'user92**15', 'user47**33', 'user85**09', 'user20**76'
+      'user64**28', 'user92**15', 'user47**33', 'user85**09', 'user20**76',
+      'user73**41', 'user56**88', 'user39**02', 'user91**65', 'user14**29'
     ];
 
-    // Shift user pool deterministically per week
-    const shift = weekNumber % userPool.length;
+    // Shift user pool deterministically each week so new users appear at top
+    const shift = (weekNumber * 3) % userPool.length;
     const shiftedUsers = [...userPool.slice(shift), ...userPool.slice(0, shift)];
 
-    // Strictly descending step-downs
-    const stepDowns = [0, 1.95, 3.40, 4.55, 5.15, 5.65, 6.05, 6.35, 6.65, 6.95];
-
     return rankBadges.map((badge, idx) => {
-      const earnedVal = Math.max(2.60, parseFloat((baseTop - stepDowns[idx]).toFixed(2)));
-      const refsCount = Math.max(7, Math.round(earnedVal * 2.8 + ((weekNumber + idx) % 3)));
+      // Smooth curve from Rank 1 (baseTop) down to Rank 10 (baseTenth)
+      const ratio = Math.pow((9 - idx) / 9, 1.25);
+      const earnedVal = parseFloat((baseTenth + (baseTop - baseTenth) * ratio).toFixed(2));
+      const refsCount = Math.round(earnedVal * 2.8 + ((weekNumber + idx) % 4));
+
       return {
         rank: idx + 1,
         name: shiftedUsers[idx] || `user${idx + 10}**${idx + 20}`,
@@ -136,7 +141,7 @@ export const LeaderboardService = {
       recentWithdrawals,
       topEarners: finalTopEarners,
       platformStats: {
-        totalPaidOut: '$386.50+',
+        totalPaidOut: '$438.50+',
         avgProcessingTime: '~2 Hours',
         payoutSuccessRate: '100%'
       }

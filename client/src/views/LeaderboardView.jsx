@@ -46,16 +46,16 @@ export default function LeaderboardView() {
   const recentWithdrawals = data?.recentWithdrawals || fallbackWithdrawals;
 
   const topEarners = data?.topEarners || [
-    { rank: 1, name: 'user94**12', refs: 28, earned: '$9.80', badge: '🥇' },
-    { rank: 2, name: 'user78**35', refs: 21, earned: '$7.85', badge: '🥈' },
-    { rank: 3, name: 'user51**80', refs: 17, earned: '$6.40', badge: '🥉' },
-    { rank: 4, name: 'user33**49', refs: 14, earned: '$5.20', badge: '#4' },
-    { rank: 5, name: 'user82**06', refs: 12, earned: '$4.65', badge: '#5' },
-    { rank: 6, name: 'user19**67', refs: 11, earned: '$4.10', badge: '#6' },
-    { rank: 7, name: 'user60**23', refs: 10, earned: '$3.75', badge: '#7' },
-    { rank: 8, name: 'user45**91', refs: 10, earned: '$3.50', badge: '#8' },
-    { rank: 9, name: 'user28**74', refs: 9, earned: '$3.15', badge: '#9' },
-    { rank: 10, name: 'user11**59', refs: 8, earned: '$2.80', badge: '#10' }
+    { rank: 1, name: 'user94**12', refs: 38, earned: '$13.80', badge: '🥇' },
+    { rank: 2, name: 'user78**35', refs: 31, earned: '$11.45', badge: '🥈' },
+    { rank: 3, name: 'user51**80', refs: 26, earned: '$9.60', badge: '🥉' },
+    { rank: 4, name: 'user33**49', refs: 22, earned: '$8.20', badge: '#4' },
+    { rank: 5, name: 'user82**06', refs: 19, earned: '$7.15', badge: '#5' },
+    { rank: 6, name: 'user19**67', refs: 17, earned: '$6.35', badge: '#6' },
+    { rank: 7, name: 'user60**23', refs: 15, earned: '$5.80', badge: '#7' },
+    { rank: 8, name: 'user45**91', refs: 14, earned: '$5.40', badge: '#8' },
+    { rank: 9, name: 'user28**74', refs: 13, earned: '$5.10', badge: '#9' },
+    { rank: 10, name: 'user11**59', refs: 12, earned: '$4.85', badge: '#10' }
   ];
 
   const platformStats = data?.platformStats || {
