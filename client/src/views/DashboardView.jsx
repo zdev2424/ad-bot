@@ -87,9 +87,6 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
             {t('dashboard.currentBalance')}
           </span>
-          <span style={{ fontSize: '11px', padding: '3px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-            <Zap size={11} /> {t('dashboard.usdEquivalent')}
-          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '14px' }}>
@@ -158,11 +155,13 @@ export default function DashboardView({ user, setActiveTab, onOpenTerms }) {
         <div className="glass-card glass-card-interactive" onClick={() => handleCardNav('withdraw')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <Wallet size={18} color="var(--accent-emerald)" />
-            <span className="badge badge-emerald">Gate</span>
+            <span className={`badge ${ (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'badge-emerald' : 'badge-amber'}`}>
+              {(stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'Ready' : 'Progress'}
+            </span>
           </div>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('dashboard.withdrawGate')}</span>
-          <p className="tabular-nums" style={{ fontSize: '14px', fontWeight: '800', marginTop: '4px', color: (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
-            {(stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? t('dashboard.unlocked') : `${adsWatchedToday}/20 Ads`}
+          <p className="tabular-nums" style={{ fontSize: '13px', fontWeight: '800', marginTop: '4px', color: (stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
+            {(stats?.eligibility?.isEligible ?? user?.eligibility?.isEligible) ? t('dashboard.unlocked') : `${adsWatchedToday}/20 Ads • ${referralCount}/10 Refs`}
           </p>
         </div>
       </div>

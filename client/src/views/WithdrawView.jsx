@@ -272,7 +272,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                     )}
                   </>
                 ) : (
-                  <span>-- Search or Choose Your Country --</span>
+                  <span>Search or select country</span>
                 )}
               </div>
               <ChevronDown size={16} color="var(--text-muted)" />
@@ -303,7 +303,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                   <Search size={14} color="var(--text-muted)" style={{ marginRight: '6px' }} />
                   <input
                     type="text"
-                    placeholder="Type country name..."
+                    placeholder="Search country..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
@@ -363,7 +363,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
               {hasLocalMethods && (
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                    Choose Payout Method:
+                    Payment Type:
                   </label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <button
@@ -416,7 +416,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
                     <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                      Select Provider ({selectedCountry.name}) *
+                      Provider ({selectedCountry.name}) *
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${countryConfig.methods.length}, 1fr)`, gap: '8px' }}>
                       {countryConfig.methods.map((method) => (
@@ -474,7 +474,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                   {/* Crypto Asset Switcher: TON vs USDT */}
                   <div>
                     <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
-                      Choose Crypto Asset *
+                      Select Crypto Asset *
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <button
@@ -495,7 +495,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                           gap: '6px'
                         }}
                       >
-                        💎 TON (The Open Network)
+                        💎 TON
                       </button>
 
                       <button
@@ -516,7 +516,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                           gap: '6px'
                         }}
                       >
-                        💵 USDT (Tether USD)
+                        💵 USDT
                       </button>
                     </div>
                   </div>
@@ -525,7 +525,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                   {cryptoType === 'USDT' && (
                     <div>
                       <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
-                        Select USDT Network:
+                        Select Network:
                       </label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                         {['TON', 'TRC20', 'BEP20'].map((net) => (
@@ -554,7 +554,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                   {/* Crypto Address Input */}
                   <div>
                     <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                      {cryptoType === 'TON' ? 'TON Wallet Address' : `USDT (${cryptoNetwork}) Payout Address`} *
+                      {cryptoType === 'TON' ? 'TON Wallet Address' : `USDT (${cryptoNetwork}) Address`} *
                     </label>
                     <input
                       type="text"
@@ -603,17 +603,17 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
             {submitting ? (
               <>
                 <div style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                <span>Processing Payout...</span>
+                <span>Processing...</span>
               </>
             ) : liveStatus === 'pending' || liveStatus === 'in_queue' ? (
               <>
                 <Clock size={16} color="var(--accent-amber)" />
-                <span>Pending in Queue</span>
+                <span>Pending Review</span>
               </>
             ) : !isFullyEligible ? (
               <>
                 <Lock size={16} color="var(--accent-amber)" />
-                <span>Locked ({adsWatched}/20 Ads, {referralCount}/10 Refs)</span>
+                <span>Locked (Need 20 Ads & 10 Referrals)</span>
               </>
             ) : (
               <>
@@ -643,7 +643,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                 opacity: 0.85
               }}
             >
-              📜 <span>View Withdrawal Terms & Fair Play Rules</span>
+              📜 <span>Terms & Fair Play Rules</span>
             </button>
           </div>
         )}
@@ -707,21 +707,21 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
             </div>
 
             <span className="badge badge-amber" style={{ marginBottom: '10px' }}>
-              ⏳ Pending in Queue
+              Pending Review
             </span>
 
             <h3 style={{ fontSize: '20px', fontWeight: '800', marginTop: '4px' }}>
-              Withdrawal Placed in Queue!
+              Withdrawal Submitted!
             </h3>
 
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '10px', lineHeight: '1.5' }}>
-              Your payout request has been successfully submitted and placed in our review queue.
+              Your payout request has been received and is currently in the review queue.
             </p>
 
             {/* Waiting Time Notice Box */}
             <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.25)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Estimated Processing Time:</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Estimated Time:</span>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-amber)' }}>{estimatedWaitTime}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -729,7 +729,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
                 <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-primary)' }}>#14 in line</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Requested Amount:</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Amount:</span>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-emerald)' }}>${balance.toFixed(2)} USD</span>
               </div>
             </div>
@@ -739,7 +739,7 @@ export default function WithdrawView({ user, onStatusChange, onOpenTerms }) {
               className="btn-primary"
               style={{ marginTop: '18px' }}
             >
-              Got It / Return to Dashboard
+              Return to Dashboard
             </button>
           </div>
         </div>

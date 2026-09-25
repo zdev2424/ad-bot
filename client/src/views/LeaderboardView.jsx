@@ -84,7 +84,7 @@ export default function LeaderboardView() {
           </div>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('leaderboard.title')}</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Top network earners & live payouts this week</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('leaderboard.subtitle')}</p>
           </div>
         </div>
 
@@ -148,10 +148,10 @@ export default function LeaderboardView() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Flame size={16} color="var(--accent-amber)" />
-            This Week's Top Earners
+            {t('leaderboard.topTitle')}
           </h4>
           <span className="badge badge-amber" style={{ fontSize: '10px' }}>
-            Rankings
+            Top 10
           </span>
         </div>
 
