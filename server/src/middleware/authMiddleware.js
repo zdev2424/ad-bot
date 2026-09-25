@@ -11,9 +11,9 @@ export function requireTelegramAuth(req, res, next) {
     initData = req.headers['x-telegram-init-data'];
   }
 
-  // Development bypass helper if no initData is present and in dev mode
+  // Development bypass helper: ONLY allowed in explicit development mode, NEVER in production
   if (!initData && process.env.NODE_ENV === 'development') {
-    const mockId = req.headers['x-mock-telegram-id'] || '999999999';
+    const mockId = '999999999';
     req.user = {
       telegramId: mockId,
       firstName: 'Dev',
@@ -21,7 +21,7 @@ export function requireTelegramAuth(req, res, next) {
       username: 'dev_tester',
       languageCode: 'en',
       isPremium: false,
-      isAdmin: isUserAdmin(mockId),
+      isAdmin: false,
       isDevMock: true
     };
     return next();

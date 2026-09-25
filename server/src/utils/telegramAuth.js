@@ -34,6 +34,9 @@ export function verifyTelegramInitData(initDataString, botToken) {
 
     // If bot token is not set or in test mode
     if (!botToken || botToken === 'your_telegram_bot_token_here') {
+      if (process.env.NODE_ENV === 'production') {
+        return { valid: false, error: 'Authentication service unavailable' };
+      }
       // In dev mode without a token, parse user safely if present
       const userParam = urlParams.get('user');
       const parsedUser = userParam ? JSON.parse(userParam) : null;
