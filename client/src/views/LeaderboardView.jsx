@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, DollarSign, CheckCircle2, Flame, Clock, RefreshCw, Zap, ChevronRight, Sparkles } from 'lucide-react';
+import { Trophy, Flame, CheckCircle2, RefreshCw, Zap, Sparkles } from 'lucide-react';
 import { leaderboardApi } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function LeaderboardView() {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('feed'); // 'feed' or 'top'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sliderIndex, setSliderIndex] = useState(0);
@@ -44,17 +43,19 @@ export default function LeaderboardView() {
     { id: 14, user: 'user720**14', amount: '$3.00', time: '2 days ago', method: 'Telebirr', flag: '🇪🇹' }
   ];
 
-  const recentWithdrawals = data?.recentWithdrawals || data?.activityFeed || fallbackWithdrawals;
+  const recentWithdrawals = data?.recentWithdrawals || fallbackWithdrawals;
 
   const topEarners = data?.topEarners || [
-    { rank: 1, name: 'user94**12', refs: 24, earned: '$8.40', badge: '🥇' },
-    { rank: 2, name: 'user78**35', refs: 19, earned: '$6.75', badge: '🥈' },
-    { rank: 3, name: 'user51**80', refs: 16, earned: '$5.60', badge: '🥉' },
-    { rank: 4, name: 'user33**49', refs: 14, earned: '$4.90', badge: '#4' },
-    { rank: 5, name: 'user82**06', refs: 12, earned: '$4.20', badge: '#5' },
-    { rank: 6, name: 'user19**67', refs: 11, earned: '$3.85', badge: '#6' },
-    { rank: 7, name: 'user60**23', refs: 10, earned: '$3.50', badge: '#7' },
-    { rank: 8, name: 'user45**91', refs: 10, earned: '$3.50', badge: '#8' }
+    { rank: 1, name: 'user94**12', refs: 28, earned: '$9.80', badge: '🥇' },
+    { rank: 2, name: 'user78**35', refs: 21, earned: '$7.85', badge: '🥈' },
+    { rank: 3, name: 'user51**80', refs: 17, earned: '$6.40', badge: '🥉' },
+    { rank: 4, name: 'user33**49', refs: 14, earned: '$5.20', badge: '#4' },
+    { rank: 5, name: 'user82**06', refs: 12, earned: '$4.65', badge: '#5' },
+    { rank: 6, name: 'user19**67', refs: 11, earned: '$4.10', badge: '#6' },
+    { rank: 7, name: 'user60**23', refs: 10, earned: '$3.75', badge: '#7' },
+    { rank: 8, name: 'user45**91', refs: 10, earned: '$3.50', badge: '#8' },
+    { rank: 9, name: 'user28**74', refs: 9, earned: '$3.15', badge: '#9' },
+    { rank: 10, name: 'user11**59', refs: 8, earned: '$2.80', badge: '#10' }
   ];
 
   const platformStats = data?.platformStats || {
@@ -62,12 +63,12 @@ export default function LeaderboardView() {
     avgProcessingTime: '~2 Hours'
   };
 
-  // Auto-Slider Timer
+  // Auto-Slider Timer (cycles smoothly every 3.5 seconds)
   useEffect(() => {
     if (!recentWithdrawals || recentWithdrawals.length === 0) return;
     const interval = setInterval(() => {
       setSliderIndex((prev) => (prev + 1) % recentWithdrawals.length);
-    }, 3600);
+    }, 3500);
     return () => clearInterval(interval);
   }, [recentWithdrawals.length]);
 
@@ -83,11 +84,11 @@ export default function LeaderboardView() {
           </div>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '800' }}>{t('leaderboard.title')}</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('leaderboard.subtitle')}</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Top network earners & live payouts this week</p>
           </div>
         </div>
 
-        {/* Believable Platform Stats */}
+        {/* Platform Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('leaderboard.totalPaid')}</span>
@@ -142,114 +143,56 @@ export default function LeaderboardView() {
         </div>
       )}
 
-      {/* Segment Switcher */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-        <button
-          onClick={() => setActiveTab('feed')}
-          className="btn-secondary"
-          style={{
-            background: activeTab === 'feed' ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.06)',
-            color: activeTab === 'feed' ? '#ffffff' : 'var(--text-secondary)',
-            border: 'none',
-            fontSize: '13px'
-          }}
-        >
-          <Clock size={16} /> {t('leaderboard.recentTab')}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('top')}
-          className="btn-secondary"
-          style={{
-            background: activeTab === 'top' ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.06)',
-            color: activeTab === 'top' ? '#ffffff' : 'var(--text-secondary)',
-            border: 'none',
-            fontSize: '13px'
-          }}
-        >
-          <Flame size={16} /> {t('leaderboard.topTab')}
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'feed' ? (
-        <div className="glass-card" style={{ padding: '14px' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-emerald)', display: 'inline-block' }} />
-            {t('leaderboard.streamTitle')}
+      {/* Full Top Earners Leaderboard (Clean & In Descending Order) */}
+      <div className="glass-card" style={{ padding: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Flame size={16} color="var(--accent-amber)" />
+            This Week's Top Earners
           </h4>
+          <span className="badge badge-amber" style={{ fontSize: '10px' }}>
+            Rankings
+          </span>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {recentWithdrawals.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  background: 'rgba(15, 23, 42, 0.5)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)'
-                }}
-              >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {topEarners.map((earner) => (
+            <div
+              key={earner.rank}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 12px',
+                background: earner.rank <= 3 ? 'rgba(30, 41, 67, 0.45)' : 'rgba(15, 23, 42, 0.5)',
+                borderRadius: 'var(--radius-md)',
+                border: earner.rank === 1
+                  ? '1px solid rgba(245, 158, 11, 0.35)'
+                  : earner.rank === 2
+                  ? '1px solid rgba(148, 163, 184, 0.25)'
+                  : earner.rank === 3
+                  ? '1px solid rgba(217, 119, 6, 0.25)'
+                  : '1px solid var(--border-color)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: earner.rank <= 3 ? '18px' : '12px', fontWeight: '800', width: '24px', textAlign: 'center', color: earner.rank <= 3 ? undefined : 'var(--text-muted)' }}>
+                  {earner.badge}
+                </span>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{item.user}</p>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>• {item.time}</span>
-                  </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                    {item.method} {item.flag || ''}
-                  </span>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{item.amount}</p>
-                  <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'flex-end' }}>
-                    <CheckCircle2 size={10} /> Completed
-                  </span>
+                  <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{earner.name}</p>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{earner.refs} Referrals</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="glass-card" style={{ padding: '14px' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>{t('leaderboard.topTitle')}</h4>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {topEarners.map((earner) => (
-              <div
-                key={earner.rank}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  background: 'rgba(15, 23, 42, 0.5)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: '800', width: '24px', textAlign: 'center' }}>
-                    {earner.badge}
-                  </span>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{earner.name}</p>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{earner.refs} Referrals</span>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{earner.earned}</p>
-                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Earned</span>
-                </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-emerald)' }}>{earner.earned}</p>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Earned</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
