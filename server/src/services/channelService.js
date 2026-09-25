@@ -62,9 +62,20 @@ export const ChannelService = {
       throw new Error('Channel not found or inactive');
     }
 
+    // 1. Check if user has already verified this channel (0 external API calls needed)
+    const alreadyVerified = db.prepare('SELECT 1 FROM user_channels WHERE user_id = ? AND channel_id = ?').get(user.id, channel.id);
+    if (alreadyVerified) {
+      return {
+        success: true,
+        channelId,
+        isJoined: true,
+        message: `Already verified for ${channel.name}!`
+      };
+    }
+
     let isMember = true;
 
-    // Real Telegram Bot API Verification if bot token is active
+    // 2. Real Telegram Bot API Verification if bot token is active
     if (botInstance && botInstance.api) {
       try {
         const chatIdentifier = channel.username.startsWith('@') ? channel.username : `@${channel.username}`;
@@ -73,8 +84,14 @@ export const ChannelService = {
         const validStatuses = ['member', 'administrator', 'creator', 'restricted'];
         isMember = validStatuses.includes(chatMember?.status);
       } catch (err) {
-        console.warn(`⚠️ [Telegram Channel Verification] Bot query for ${channel.username} returned: ${err.message}. Falling back to click confirmation.`);
-        isMember = true; // Fallback so users aren't blocked if bot is not yet admin of channel
+        // Detect Telegram 429 flood control
+        if (err?.error_code === 429 || err?.message?.includes('retry after')) {
+          console.warn(`⚠️ [Telegram API Rate Limit] 429 Flood control hit for ${channel.username}. Temporarily allowing user.`);
+          isMember = true;
+        } else {
+          console.warn(`⚠️ [Telegram Channel Verification] Bot query for ${channel.username} returned: ${err.message}. Falling back to click confirmation.`);
+          isMember = true; // Fallback so users aren't blocked if bot is not yet admin of channel
+        }
       }
     }
 

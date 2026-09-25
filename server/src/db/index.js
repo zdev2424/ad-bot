@@ -15,8 +15,10 @@ if (!fs.existsSync(dataDir)) {
 const dbPath = path.join(dataDir, 'earncashio.db');
 const db = new Database(dbPath);
 
-// Enable WAL mode for better concurrency and performance
+// Enable WAL mode and tune for high concurrency and zero lock crashes
 db.pragma('journal_mode = WAL');
+db.pragma('busy_timeout = 5000'); // Wait up to 5s on concurrent write locks instead of crashing
+db.pragma('synchronous = NORMAL'); // Significantly faster disk I/O in WAL mode
 
 /**
  * Initialize all database tables and indexes

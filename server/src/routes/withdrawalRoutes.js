@@ -1,5 +1,6 @@
 import express from 'express';
 import { requireTelegramAuth } from '../middleware/authMiddleware.js';
+import { channelVerifyLimiter } from '../middleware/rateLimiter.js';
 import { WithdrawalService } from '../services/withdrawalService.js';
 import { ChannelService } from '../services/channelService.js';
 
@@ -48,7 +49,7 @@ router.get('/channels', requireTelegramAuth, (req, res) => {
  * @desc    Verifies user membership in a specific Telegram channel
  * @access  Protected
  */
-router.post('/verify-channel', requireTelegramAuth, async (req, res) => {
+router.post('/verify-channel', requireTelegramAuth, channelVerifyLimiter, async (req, res) => {
   try {
     const { channelId } = req.body;
     if (!channelId) {

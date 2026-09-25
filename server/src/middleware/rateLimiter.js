@@ -44,3 +44,18 @@ export const authLimiter = rateLimit({
     error: 'Too many authentication attempts. Please try again later.'
   }
 });
+
+/**
+ * Channel Verification Rate Limiter
+ * Maximum 10 verification checks per minute (protects Telegram Bot API flood limits)
+ */
+export const channelVerifyLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Verification rate limit exceeded. Please wait a moment before trying again.'
+  }
+});
